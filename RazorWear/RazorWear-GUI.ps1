@@ -5,6 +5,11 @@ $ErrorActionPreference = "Stop"
 
 $AppRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $CleanerPath = Join-Path $AppRoot "RazorWear.ps1"
+$VersionPath = Join-Path $AppRoot "VERSION.txt"
+$VersionText = "preview"
+if (Test-Path -LiteralPath $VersionPath) {
+    $VersionText = ((Get-Content -LiteralPath $VersionPath -TotalCount 1) -replace "^RazorWear\s+", "").Trim()
+}
 
 function New-Font {
     param(
@@ -87,11 +92,43 @@ $Form.MinimumSize = New-Object System.Drawing.Size(940, 660)
 $Form.BackColor = $Canvas
 $Form.Font = New-Font 9
 
+$Shell = New-Object System.Windows.Forms.TableLayoutPanel
+$Shell.Dock = [System.Windows.Forms.DockStyle]::Fill
+$Shell.ColumnCount = 1
+$Shell.RowCount = 3
+$Shell.Margin = New-Object System.Windows.Forms.Padding(0)
+$Shell.Padding = New-Object System.Windows.Forms.Padding(0)
+$Shell.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::Percent, 100)))
+$Shell.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Absolute, 26)))
+$Shell.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Absolute, 126)))
+$Shell.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Percent, 100)))
+$Form.Controls.Add($Shell)
+
+$MenuStrip = New-Object System.Windows.Forms.MenuStrip
+$MenuStrip.Dock = [System.Windows.Forms.DockStyle]::Fill
+$MenuStrip.BackColor = [System.Drawing.Color]::FromArgb(249, 251, 250)
+$MenuStrip.ForeColor = $Ink
+$MenuStrip.Font = New-Font 9
+$MenuStrip.RenderMode = [System.Windows.Forms.ToolStripRenderMode]::System
+$Form.MainMenuStrip = $MenuStrip
+$Shell.Controls.Add($MenuStrip, 0, 0)
+
+$FileMenu = New-Object System.Windows.Forms.ToolStripMenuItem("File")
+$ExitMenuItem = New-Object System.Windows.Forms.ToolStripMenuItem("Exit")
+$FileMenu.DropDownItems.Add($ExitMenuItem) | Out-Null
+$MenuStrip.Items.Add($FileMenu) | Out-Null
+
+$AboutMenuItem = New-Object System.Windows.Forms.ToolStripMenuItem("About")
+$MenuStrip.Items.Add($AboutMenuItem) | Out-Null
+
+$ReportBugMenuItem = New-Object System.Windows.Forms.ToolStripMenuItem("Report Bug")
+$MenuStrip.Items.Add($ReportBugMenuItem) | Out-Null
+
 $Header = New-Object System.Windows.Forms.Panel
-$Header.Dock = [System.Windows.Forms.DockStyle]::Top
-$Header.Height = 132
+$Header.Dock = [System.Windows.Forms.DockStyle]::Fill
+$Header.Height = 126
 $Header.BackColor = $BrandDark
-$Form.Controls.Add($Header)
+$Shell.Controls.Add($Header, 0, 1)
 
 $BrandMark = New-Object System.Windows.Forms.Label
 $BrandMark.Text = "RW"
@@ -114,11 +151,13 @@ $Header.Controls.Add($Title)
 $Subtitle = New-Object System.Windows.Forms.Label
 $Subtitle.Text = "Private cleanup. No tracking. No accounts. No background service."
 $Subtitle.AutoSize = $false
-$Subtitle.Size = New-Object System.Drawing.Size(600, 24)
-$Subtitle.Font = New-Font 10
+$Subtitle.Size = New-Object System.Drawing.Size(650, 36)
+$Subtitle.Font = New-Font 11
 $Subtitle.ForeColor = [System.Drawing.Color]::FromArgb(221, 239, 232)
 $Subtitle.Location = New-Object System.Drawing.Point(116, 70)
+$Subtitle.UseCompatibleTextRendering = $true
 $Header.Controls.Add($Subtitle)
+$Subtitle.BringToFront()
 
 $PrivacyBadge = New-Object System.Windows.Forms.Label
 $PrivacyBadge.Text = "Private by design"
@@ -132,7 +171,7 @@ $PrivacyBadge.Anchor = "Top, Right"
 $Header.Controls.Add($PrivacyBadge)
 
 $VersionBadge = New-Object System.Windows.Forms.Label
-$VersionBadge.Text = "0.5.0 preview"
+$VersionBadge.Text = $VersionText
 $VersionBadge.AutoSize = $true
 $VersionBadge.Font = New-Font 8
 $VersionBadge.ForeColor = [System.Drawing.Color]::FromArgb(190, 214, 207)
@@ -147,7 +186,7 @@ $Main.ColumnCount = 2
 $Main.RowCount = 1
 $Main.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::Absolute, 306)))
 $Main.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::Percent, 100)))
-$Form.Controls.Add($Main)
+$Shell.Controls.Add($Main, 0, 2)
 
 $ControlsPanel = New-Object System.Windows.Forms.Panel
 $ControlsPanel.Dock = [System.Windows.Forms.DockStyle]::Fill
@@ -177,7 +216,7 @@ $AgeLabel.Text = "Clean temp files older than"
 $AgeLabel.AutoSize = $true
 $AgeLabel.Font = New-Font 9 ([System.Drawing.FontStyle]::Bold)
 $AgeLabel.ForeColor = $Ink
-$AgeLabel.Location = New-Object System.Drawing.Point(22, 132)
+$AgeLabel.Location = New-Object System.Drawing.Point(22, 96)
 $ControlsPanel.Controls.Add($AgeLabel)
 
 $AgeInput = New-Object System.Windows.Forms.NumericUpDown
@@ -185,7 +224,7 @@ $AgeInput.Minimum = 1
 $AgeInput.Maximum = 30
 $AgeInput.Value = 1
 $AgeInput.Width = 72
-$AgeInput.Location = New-Object System.Drawing.Point(24, 162)
+$AgeInput.Location = New-Object System.Drawing.Point(24, 124)
 $AgeInput.Font = New-Font 11
 $ControlsPanel.Controls.Add($AgeInput)
 
@@ -194,7 +233,7 @@ $DaysLabel.Text = "day(s)"
 $DaysLabel.AutoSize = $true
 $DaysLabel.Font = New-Font 10
 $DaysLabel.ForeColor = $Muted
-$DaysLabel.Location = New-Object System.Drawing.Point(106, 166)
+$DaysLabel.Location = New-Object System.Drawing.Point(106, 128)
 $ControlsPanel.Controls.Add($DaysLabel)
 
 $RecycleCheck = New-Object System.Windows.Forms.CheckBox
@@ -202,7 +241,7 @@ $RecycleCheck.Text = "Also empty Recycle Bin"
 $RecycleCheck.AutoSize = $true
 $RecycleCheck.Font = New-Font 9
 $RecycleCheck.ForeColor = $Ink
-$RecycleCheck.Location = New-Object System.Drawing.Point(24, 216)
+$RecycleCheck.Location = New-Object System.Drawing.Point(24, 170)
 $ControlsPanel.Controls.Add($RecycleCheck)
 
 $RecycleNote = New-Object System.Windows.Forms.Label
@@ -210,7 +249,7 @@ $RecycleNote.Text = "Off by default so recoverable files stay recoverable."
 $RecycleNote.Size = New-Object System.Drawing.Size(250, 38)
 $RecycleNote.Font = New-Font 8
 $RecycleNote.ForeColor = $SoftMuted
-$RecycleNote.Location = New-Object System.Drawing.Point(25, 244)
+$RecycleNote.Location = New-Object System.Drawing.Point(25, 196)
 $ControlsPanel.Controls.Add($RecycleNote)
 
 $TrustLine = New-Object System.Windows.Forms.Label
@@ -218,27 +257,27 @@ $TrustLine.Text = "No telemetry. No personal folders. No background cleanup."
 $TrustLine.Size = New-Object System.Drawing.Size(250, 42)
 $TrustLine.Font = New-Font 8 ([System.Drawing.FontStyle]::Bold)
 $TrustLine.ForeColor = $Brand
-$TrustLine.Location = New-Object System.Drawing.Point(24, 292)
+$TrustLine.Location = New-Object System.Drawing.Point(24, 238)
 $ControlsPanel.Controls.Add($TrustLine)
 
 $PreviewButton = New-Object System.Windows.Forms.Button
 $PreviewButton.Text = "Preview Scan"
 $PreviewButton.Size = New-Object System.Drawing.Size(250, 44)
-$PreviewButton.Location = New-Object System.Drawing.Point(24, 350)
+$PreviewButton.Location = New-Object System.Drawing.Point(24, 286)
 Set-ButtonStyle -Button $PreviewButton -BackColor ([System.Drawing.Color]::FromArgb(230, 239, 236)) -ForeColor $Brand
 $ControlsPanel.Controls.Add($PreviewButton)
 
 $CleanButton = New-Object System.Windows.Forms.Button
 $CleanButton.Text = "Clean Safely"
 $CleanButton.Size = New-Object System.Drawing.Size(250, 50)
-$CleanButton.Location = New-Object System.Drawing.Point(24, 406)
+$CleanButton.Location = New-Object System.Drawing.Point(24, 338)
 Set-ButtonStyle -Button $CleanButton -BackColor $Brand -ForeColor ([System.Drawing.Color]::White)
 $ControlsPanel.Controls.Add($CleanButton)
 
 $OpenLogsButton = New-Object System.Windows.Forms.Button
 $OpenLogsButton.Text = "Open Logs"
 $OpenLogsButton.Size = New-Object System.Drawing.Size(250, 38)
-$OpenLogsButton.Location = New-Object System.Drawing.Point(24, 474)
+$OpenLogsButton.Location = New-Object System.Drawing.Point(24, 400)
 Set-ButtonStyle -Button $OpenLogsButton -BackColor ([System.Drawing.Color]::FromArgb(245, 247, 245)) -ForeColor ([System.Drawing.Color]::FromArgb(64, 75, 70))
 $ControlsPanel.Controls.Add($OpenLogsButton)
 
@@ -294,20 +333,120 @@ $ResultsPanel.Controls.Add($StatusChip)
 $OutputBox = New-Object System.Windows.Forms.TextBox
 $OutputBox.Multiline = $true
 $OutputBox.ReadOnly = $true
-$OutputBox.ScrollBars = [System.Windows.Forms.ScrollBars]::Vertical
+$OutputBox.ScrollBars = [System.Windows.Forms.ScrollBars]::None
 $OutputBox.Font = New-Object System.Drawing.Font("Consolas", 9)
 $OutputBox.BackColor = [System.Drawing.Color]::FromArgb(250, 251, 250)
 $OutputBox.ForeColor = [System.Drawing.Color]::FromArgb(42, 50, 47)
 $OutputBox.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
-$OutputBox.Anchor = "Top, Bottom, Left, Right"
+$OutputBox.Anchor = "Top, Left"
 $OutputBox.Location = New-Object System.Drawing.Point(22, 92)
 $OutputBox.Size = New-Object System.Drawing.Size(520, 350)
-$OutputBox.Text = "No scan has run yet.`r`n`r`nRazorWear does not connect to the internet or collect any information."
+$OutputBox.Text = ""
 $ResultsPanel.Controls.Add($OutputBox)
+
+$script:IdlePulse = 0
+$IdlePanel = New-Object System.Windows.Forms.Panel
+$IdlePanel.Anchor = "Top, Left"
+$IdlePanel.Location = $OutputBox.Location
+$IdlePanel.Size = $OutputBox.Size
+$IdlePanel.BackColor = [System.Drawing.Color]::FromArgb(250, 251, 250)
+$IdlePanel.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
+$ResultsPanel.Controls.Add($IdlePanel)
+$IdlePanel.BringToFront()
+
+$IdleTitle = New-Object System.Windows.Forms.Label
+$IdleTitle.Text = "No scan has run yet."
+$IdleTitle.AutoSize = $false
+$IdleTitle.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
+$IdleTitle.Font = New-Font 16 ([System.Drawing.FontStyle]::Bold)
+$IdleTitle.ForeColor = $Ink
+$IdleTitle.Anchor = "Left, Right, Bottom"
+$IdleTitle.Location = New-Object System.Drawing.Point(20, 205)
+$IdleTitle.Size = New-Object System.Drawing.Size(480, 34)
+$IdlePanel.Controls.Add($IdleTitle)
+$IdleTitle.Visible = $false
+
+$IdleSubtext = New-Object System.Windows.Forms.Label
+$IdleSubtext.Text = "Preview first. Only approved temp folders are checked. No information is collected."
+$IdleSubtext.AutoSize = $false
+$IdleSubtext.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
+$IdleSubtext.Font = New-Font 9
+$IdleSubtext.ForeColor = $Muted
+$IdleSubtext.Anchor = "Left, Right, Bottom"
+$IdleSubtext.Location = New-Object System.Drawing.Point(60, 244)
+$IdleSubtext.Size = New-Object System.Drawing.Size(400, 42)
+$IdlePanel.Controls.Add($IdleSubtext)
+$IdleSubtext.Visible = $false
+
+$IdlePanel.Add_Paint({
+    param($sender, $e)
+
+    $graphics = $e.Graphics
+    $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+
+    $width = $sender.ClientSize.Width
+    $centerX = $width / 2
+    $height = $sender.ClientSize.Height
+    $centerY = [Math]::Max(74, [Math]::Min(98, $height * 0.28))
+    $titleY = $centerY + 62
+    $bodyY = $titleY + 34
+    $pulse = [Math]::Sin($script:IdlePulse / 12)
+    $ringSize = 78 + (5 * $pulse)
+
+    $haloBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(34, $Brand.R, $Brand.G, $Brand.B))
+    $ringPen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(140, $Brand.R, $Brand.G, $Brand.B), 3)
+    $accentPen = New-Object System.Drawing.Pen($Warning, 3)
+    $accentPen.StartCap = [System.Drawing.Drawing2D.LineCap]::Round
+    $accentPen.EndCap = [System.Drawing.Drawing2D.LineCap]::Round
+    $textBrush = New-Object System.Drawing.SolidBrush($BrandDark)
+    $mutedBrush = New-Object System.Drawing.SolidBrush($Muted)
+    $font = New-Font 22 ([System.Drawing.FontStyle]::Bold)
+    $titleFont = New-Font 16 ([System.Drawing.FontStyle]::Bold)
+    $bodyFont = New-Font 9
+
+    $haloRect = New-Object System.Drawing.RectangleF(($centerX - ($ringSize / 2)), ($centerY - ($ringSize / 2)), $ringSize, $ringSize)
+    $ringRect = New-Object System.Drawing.RectangleF(($centerX - 38), ($centerY - 38), 76, 76)
+    $graphics.FillEllipse($haloBrush, $haloRect)
+    $graphics.DrawEllipse($ringPen, $ringRect)
+    $graphics.DrawArc($accentPen, $ringRect, (($script:IdlePulse * 4) % 360), 44)
+
+    $textSize = $graphics.MeasureString("RW", $font)
+    $graphics.DrawString("RW", $font, $textBrush, $centerX - ($textSize.Width / 2), $centerY - ($textSize.Height / 2))
+
+    $title = "No scan has run yet."
+    $titleSize = $graphics.MeasureString($title, $titleFont)
+    $graphics.DrawString($title, $titleFont, $textBrush, $centerX - ($titleSize.Width / 2), $titleY)
+
+    $body = "Preview first. Only approved temp folders are checked.`nNo information is collected."
+    $bodyRect = New-Object System.Drawing.RectangleF(64, $bodyY, ($width - 128), 50)
+    $bodyFormat = New-Object System.Drawing.StringFormat
+    $bodyFormat.Alignment = [System.Drawing.StringAlignment]::Center
+    $bodyFormat.LineAlignment = [System.Drawing.StringAlignment]::Near
+    $graphics.DrawString($body, $bodyFont, $mutedBrush, $bodyRect, $bodyFormat)
+
+    $haloBrush.Dispose()
+    $ringPen.Dispose()
+    $accentPen.Dispose()
+    $textBrush.Dispose()
+    $mutedBrush.Dispose()
+    $font.Dispose()
+    $titleFont.Dispose()
+    $bodyFont.Dispose()
+    $bodyFormat.Dispose()
+})
+
+$IdleTimer = New-Object System.Windows.Forms.Timer
+$IdleTimer.Interval = 80
+$IdleTimer.Add_Tick({
+    if ($IdlePanel.Visible -and -not $ActivityPanel.Visible) {
+        $script:IdlePulse = ($script:IdlePulse + 1) % 360
+        $IdlePanel.Invalidate()
+    }
+})
 
 $script:AnimationAngle = 0
 $ActivityPanel = New-Object System.Windows.Forms.Panel
-$ActivityPanel.Anchor = "Top, Bottom, Left, Right"
+$ActivityPanel.Anchor = "Top, Left"
 $ActivityPanel.Location = $OutputBox.Location
 $ActivityPanel.Size = $OutputBox.Size
 $ActivityPanel.BackColor = [System.Drawing.Color]::FromArgb(250, 251, 250)
@@ -383,6 +522,27 @@ $SafetyLine.ForeColor = $Muted
 $SafetyLine.Location = New-Object System.Drawing.Point(23, 456)
 $ResultsPanel.Controls.Add($SafetyLine)
 
+function Update-ResultsLayout {
+    $availableWidth = $ResultsPanel.ClientSize.Width - 44
+    $availableHeight = $ResultsPanel.ClientSize.Height - 150
+    if ($availableWidth -lt 360) { $availableWidth = 360 }
+    if ($availableHeight -lt 220) { $availableHeight = 220 }
+
+    $areaLocation = New-Object System.Drawing.Point(22, 92)
+    $areaSize = New-Object System.Drawing.Size($availableWidth, $availableHeight)
+    foreach ($control in @($OutputBox, $IdlePanel, $ActivityPanel)) {
+        $control.Location = $areaLocation
+        $control.Size = $areaSize
+    }
+
+    $SafetyLine.Location = New-Object System.Drawing.Point(23, ($ResultsPanel.ClientSize.Height - 42))
+    $SafetyLine.Size = New-Object System.Drawing.Size(($ResultsPanel.ClientSize.Width - 46), 34)
+}
+
+$ResultsPanel.Add_Resize({
+    Update-ResultsLayout
+})
+
 $InfoPanel = New-Object System.Windows.Forms.Panel
 $InfoPanel.Dock = [System.Windows.Forms.DockStyle]::Fill
 $InfoPanel.BackColor = $Surface
@@ -439,6 +599,32 @@ $InfoFooter.ForeColor = $Brand
 $InfoFooter.Location = New-Object System.Drawing.Point(30, 450)
 $InfoPanel.Controls.Add($InfoFooter)
 
+function Set-OutputText {
+    param([string]$Text)
+
+    $OutputBox.Text = $Text
+    $lineCount = @($Text -split "\r?\n").Count
+    if ($lineCount -gt 18 -or $Text.Length -gt 1400) {
+        $OutputBox.ScrollBars = [System.Windows.Forms.ScrollBars]::Vertical
+    }
+    else {
+        $OutputBox.ScrollBars = [System.Windows.Forms.ScrollBars]::None
+    }
+}
+
+function Show-OutputView {
+    $IdlePanel.Visible = $false
+    $OutputBox.Visible = $true
+    $OutputBox.BringToFront()
+}
+
+function Show-IdleView {
+    Set-OutputText ""
+    $OutputBox.Visible = $false
+    $IdlePanel.Visible = $true
+    $IdlePanel.BringToFront()
+}
+
 function Set-BusyState {
     param(
         [bool]$Busy,
@@ -453,6 +639,7 @@ function Set-BusyState {
     $ActivityText.Text = $ActivityMessage
     $ActivityPanel.Visible = $Busy
     if ($Busy) {
+        $IdlePanel.Visible = $false
         $ActivityPanel.BringToFront()
         $ActivityTimer.Start()
     }
@@ -480,7 +667,8 @@ $Worker.Add_RunWorkerCompleted({
     Set-BusyState $false
 
     if ($eventArgs.Error) {
-        $OutputBox.Text = $eventArgs.Error.Message
+        Show-OutputView
+        Set-OutputText $eventArgs.Error.Message
         $StatusChip.Text = "Needs attention"
         $StatusChip.ForeColor = $Warning
         $StatusLabel.Text = "Something needs attention."
@@ -489,7 +677,8 @@ $Worker.Add_RunWorkerCompleted({
     }
 
     $result = $eventArgs.Result
-    $OutputBox.Text = $result.Output
+    Show-OutputView
+    Set-OutputText $result.Output
 
     if ($result.Mode -eq "Preview") {
         $StatusChip.Text = "Preview ready"
@@ -522,7 +711,8 @@ function Start-RazorWearOperation {
     else {
         "RazorWear is removing only approved temporary files."
     }
-    $OutputBox.Text = if ($isPreview) { "Scanning safe cleanup locations..." } else { "Cleaning safe temp locations..." }
+    Show-OutputView
+    Set-OutputText $(if ($isPreview) { "Scanning safe cleanup locations..." } else { "Cleaning safe temp locations..." })
 
     Set-BusyState $true $(if ($isPreview) { "Scanning safely..." } else { "Cleaning safely..." })
 
@@ -561,6 +751,44 @@ $OpenLogsButton.Add_Click({
     $LogDir = Join-Path $AppRoot "logs"
     New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
     Start-Process explorer.exe $LogDir
+})
+
+$ExitMenuItem.Add_Click({
+    $Form.Close()
+})
+
+$AboutMenuItem.Add_Click({
+    [System.Windows.Forms.MessageBox]::Show(
+        "RazorWear $VersionText`r`n`r`nPrivate cleanup for Windows temp files.`r`nNo accounts. No telemetry. No background service.",
+        "About RazorWear",
+        [System.Windows.Forms.MessageBoxButtons]::OK,
+        [System.Windows.Forms.MessageBoxIcon]::Information
+    ) | Out-Null
+})
+
+$ReportBugMenuItem.Add_Click({
+    $message = "Open the RazorWear GitHub issue page in your browser?`r`n`r`nRazorWear itself will not send logs or device information."
+    $confirm = [System.Windows.Forms.MessageBox]::Show(
+        $message,
+        "Report a bug",
+        [System.Windows.Forms.MessageBoxButtons]::OKCancel,
+        [System.Windows.Forms.MessageBoxIcon]::Question
+    )
+
+    if ($confirm -eq [System.Windows.Forms.DialogResult]::OK) {
+        Start-Process "https://github.com/Renoman1195/Test-Products/issues/new?title=RazorWear%20bug%20report"
+    }
+})
+
+$Form.Add_Shown({
+    Update-ResultsLayout
+    Show-IdleView
+    $IdleTimer.Start()
+})
+
+$Form.Add_FormClosed({
+    $IdleTimer.Stop()
+    $ActivityTimer.Stop()
 })
 
 [void]$Form.ShowDialog()
