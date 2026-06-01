@@ -14,16 +14,18 @@ Prepared:
 - MSIX app manifest template
 - Asset generation script
 - Packaging checklist
+- Submission status checklist
+- Desktop Store screenshot
+- Native `RazorWear.exe` launcher
 
 Still needed before final submission:
 
 - Microsoft Partner Center developer account
 - Reserved app name in Partner Center
 - Publisher identity from Partner Center
-- Small `RazorWear.exe` launcher or native app build
 - Final MSIX package generated with MSIX Packaging Tool or Visual Studio
 - Public privacy policy URL
-- Store screenshots
+- Windows App Certification Kit pass on the final package
 
 ## Recommended Store Name
 
@@ -33,7 +35,7 @@ RazorWear
 
 MSIX packaged desktop app.
 
-The final package should launch `RazorWear.exe`. The current development version launches `RazorWear-GUI.ps1` through `Run-RazorWear.bat`, which is fine for testing but not the best final Store entry point.
+The final package should launch `RazorWear.exe`. The native launcher starts the current PowerShell/Windows Forms GUI from the app folder.
 
 ## Important
 

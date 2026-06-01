@@ -4,19 +4,23 @@
 
 - Create or sign in to a Microsoft Partner Center developer account.
 - Reserve the app name: `RazorWear`.
+- Complete the IARC age rating questionnaire.
+- Select category: `Utilities & tools`.
 - Copy the package identity values from Partner Center.
 - Replace placeholders in `Package.appxmanifest.template.xml`.
 
 ## Packaging
 
 - Install Visual Studio with Windows app packaging tools, or install MSIX Packaging Tool.
-- Build a final `RazorWear.exe` launcher.
+- Build or verify the final `RazorWear.exe` launcher.
 - Package RazorWear as a desktop MSIX app.
 - Use the generated assets from `Assets`.
+- Include the Store screenshot from `Screenshots`.
 - Verify the app launches from the package.
 - Verify preview mode runs.
 - Verify clean mode asks for confirmation.
 - Verify regular cleanup skips Recycle Bin.
+- Run Windows App Certification Kit on the final package.
 
 ## Privacy
 

@@ -50,6 +50,7 @@ function New-RazorWearAsset {
 
 New-RazorWearAsset -Path (Join-Path $AssetDir "Square44x44Logo.png") -Width 44 -Height 44 -FontSize 10
 New-RazorWearAsset -Path (Join-Path $AssetDir "Square150x150Logo.png") -Width 150 -Height 150 -FontSize 34
+New-RazorWearAsset -Path (Join-Path $AssetDir "AppTile300x300.png") -Width 300 -Height 300 -FontSize 68
 New-RazorWearAsset -Path (Join-Path $AssetDir "StoreLogo.png") -Width 50 -Height 50 -FontSize 12
 New-RazorWearAsset -Path (Join-Path $AssetDir "Wide310x150Logo.png") -Width 310 -Height 150 -FontSize 32
 
