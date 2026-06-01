@@ -3,11 +3,12 @@
 ## Partner Center
 
 - Create or sign in to a Microsoft Partner Center developer account.
-- Reserve the app name: `RazorWear`.
+- Reserve or confirm the app name: `RazorWear`.
 - Complete the IARC age rating questionnaire.
 - Select category: `Utilities & tools`.
-- Copy the package identity values from Partner Center.
-- Replace placeholders in `Package.appxmanifest.template.xml`.
+- Confirm package identity values in `Package.appxmanifest.template.xml`.
+- Confirm developer name: `Jacob Brown`.
+- Confirm publisher display name: `TraceWear™`.
 
 ## Packaging
 
@@ -33,6 +34,7 @@
 - Add app description from `StoreListing.md`.
 - Add screenshots of the GUI.
 - Add support contact.
+- Add trademark notice: `RazorWear™ and TraceWear™ are trademarks of Jacob Brown.`
 - Select Windows Desktop package target.
 
 ## Final Verification

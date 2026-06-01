@@ -4,14 +4,21 @@ Last checked: 2026-06-01
 
 ## Summary
 
-RazorWear has the core local submission materials started, including listing copy, privacy/certification notes, app logos, a desktop screenshot, and a native executable launcher. The remaining blockers are mostly Microsoft Partner Center actions and the final Store package identity/signing flow.
+RazorWear™ has the core local submission materials started, including listing copy, privacy/certification notes, app logos, a desktop screenshot, and a native executable launcher. The remaining blockers are mostly Microsoft Partner Center actions and the final Store package identity/signing flow.
+
+Store-facing identity:
+
+- App name: RazorWear™
+- Developer: Jacob Brown
+- Publisher display name: TraceWear™
+- Trademark notice: RazorWear™ and TraceWear™ are trademarks of Jacob Brown.
 
 ## Required Checklist
 
 | # | Requirement | Status | Evidence / Next Step |
 |---|---|---|---|
-| 1 | Unique app name reserved in Partner Center | Not done | Reserve `RazorWear` in Microsoft Partner Center. This cannot be completed from the repo. |
-| 2 | Valid app package: MSIX, APPX, EXE, or MSI | Partially done | `RazorWear.exe` now exists as a native launcher. A final Partner Center-ready MSIX/app package still needs the official package identity values. |
+| 1 | Unique app name reserved in Partner Center | Ready to confirm | Reserve or confirm `RazorWear` in Microsoft Partner Center. Use `RazorWear™` only for customer-facing listing/display text if Partner Center accepts the trademark symbol. |
+| 2 | Valid app package: MSIX, APPX, EXE, or MSI | Partially done | `RazorWear.exe` now exists as a native launcher. Manifest template now has `Name="RazorWear"`, `Publisher="CN=Jacob Brown"`, and `PublisherDisplayName>TraceWear™</PublisherDisplayName>`. Final package still needs Partner Center validation/signing. |
 | 3 | App icons and logos in required sizes | Mostly done | Assets exist in `StoreSubmission/Assets`: 44x44, 50x50, 150x150, 300x300, and 310x150. Run WACK/package validation after final packaging. |
 | 4 | Screenshots of the app running | Done | `StoreSubmission/Screenshots/RazorWear-Desktop-Home.png` is 1366x768 PNG. |
 | 5 | Written description of what the app does | Done | `StoreSubmission/StoreListing.md` contains the short description, full description, features, search terms, and privacy text. |
@@ -32,8 +39,8 @@ RazorWear has the core local submission materials started, including listing cop
 
 ## Next Actions
 
-1. Reserve the app name `RazorWear` in Partner Center.
-2. Copy the package identity and publisher values into `Package.appxmanifest.template.xml`.
+1. Confirm `RazorWear` is reserved in Partner Center.
+2. Confirm `Package.appxmanifest.template.xml` identity values exactly match Partner Center.
 3. Build the final MSIX package using `RazorWear.exe` as the entry point.
 4. Run Windows App Certification Kit on the final package.
 5. Upload the package, screenshot, listing text, privacy URL, category, and age rating answers in Partner Center.

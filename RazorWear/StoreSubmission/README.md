@@ -1,8 +1,8 @@
-# RazorWear Microsoft Store Submission Kit
+# RazorWear™ Microsoft Store Submission Kit
 
-This folder contains the files and notes needed to prepare RazorWear for Microsoft Store submission.
+This folder contains the files and notes needed to prepare RazorWear™ for Microsoft Store submission.
 
-RazorWear is currently a lightweight Windows desktop utility built with PowerShell and Windows Forms. To publish it in the Microsoft Store, package it as an MSIX desktop app and submit it through Microsoft Partner Center.
+RazorWear™ is currently a lightweight Windows desktop utility built with PowerShell and Windows Forms. To publish it in the Microsoft Store, package it as an MSIX desktop app and submit it through Microsoft Partner Center.
 
 ## Store Status
 
@@ -29,13 +29,25 @@ Still needed before final submission:
 
 ## Recommended Store Name
 
-RazorWear
+RazorWear™
+
+## Developer
+
+Jacob Brown
+
+## Publisher Display Name
+
+TraceWear™
 
 ## Package Type
 
 MSIX packaged desktop app.
 
 The final package should launch `RazorWear.exe`. The native launcher starts the current PowerShell/Windows Forms GUI from the app folder.
+
+## Trademark
+
+RazorWear™ and TraceWear™ are trademarks of Jacob Brown.
 
 ## Important
 
