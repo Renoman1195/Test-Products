@@ -114,6 +114,98 @@ function Invoke-RazorWear {
     return $output.Trim()
 }
 
+function Invoke-CapturedProcess {
+    param(
+        [string]$FileName,
+        [string[]]$Arguments,
+        [int]$TimeoutSeconds = 45
+    )
+
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo.FileName = $FileName
+    $process.StartInfo.Arguments = ($Arguments -join " ")
+    $process.StartInfo.UseShellExecute = $false
+    $process.StartInfo.RedirectStandardOutput = $true
+    $process.StartInfo.RedirectStandardError = $true
+    $process.StartInfo.CreateNoWindow = $true
+
+    [void]$process.Start()
+    $finished = $process.WaitForExit($TimeoutSeconds * 1000)
+    if (-not $finished) {
+        try { $process.Kill() } catch {}
+        return "Timed out while checking $FileName."
+    }
+
+    $output = $process.StandardOutput.ReadToEnd()
+    $errorOutput = $process.StandardError.ReadToEnd()
+    $text = ("$output`r`n$errorOutput").Trim()
+    $text = $text -replace "`r(?!`n)", "`n"
+    $cleanLines = @($text -split "`n" | ForEach-Object { $_.TrimEnd() } | Where-Object {
+        $_ -notmatch "^\s*[-\\|/]\s*$"
+    })
+    return ($cleanLines -join "`r`n").Trim()
+}
+
+function Get-WindowsUpdateReport {
+    try {
+        $session = New-Object -ComObject Microsoft.Update.Session
+        $searcher = $session.CreateUpdateSearcher()
+        $result = $searcher.Search("IsInstalled=0 and IsHidden=0 and Type='Software'")
+        $count = $result.Updates.Count
+
+        if ($count -eq 0) {
+            return "Windows Update: no pending software updates found."
+        }
+
+        $lines = New-Object System.Collections.Generic.List[string]
+        $lines.Add("Windows Update: $count pending software update(s) found.")
+        $max = [Math]::Min($count, 10)
+        for ($i = 0; $i -lt $max; $i++) {
+            $lines.Add(" - $($result.Updates.Item($i).Title)")
+        }
+        if ($count -gt $max) {
+            $lines.Add(" - plus $($count - $max) more update(s).")
+        }
+        return ($lines -join "`r`n")
+    }
+    catch {
+        return "Windows Update: could not check from RazorWear. Open Windows Update to check manually. $($_.Exception.Message)"
+    }
+}
+
+function Get-StoreUpdateReport {
+    $winget = Get-Command winget.exe -ErrorAction SilentlyContinue
+    if ($null -eq $winget) {
+        return "Microsoft Store apps: winget is not available. Open Microsoft Store Library to check app updates."
+    }
+
+    $output = Invoke-CapturedProcess -FileName $winget.Source -Arguments @(
+        "upgrade",
+        "--source", "msstore",
+        "--accept-source-agreements",
+        "--disable-interactivity"
+    )
+
+    if ([string]::IsNullOrWhiteSpace($output)) {
+        return "Microsoft Store apps: no update details returned. Open Microsoft Store Library to check manually."
+    }
+
+    return "Microsoft Store apps:`r`n$output"
+}
+
+function Get-UpdateReport {
+    $lines = New-Object System.Collections.Generic.List[string]
+    $lines.Add("RazorWear update check")
+    $lines.Add("RazorWear does not install Windows or Store updates automatically.")
+    $lines.Add("")
+    $lines.Add((Get-WindowsUpdateReport))
+    $lines.Add("")
+    $lines.Add((Get-StoreUpdateReport))
+    $lines.Add("")
+    $lines.Add("Choose Windows Update or Store Updates only if you want to review and install updates.")
+    return ($lines -join "`r`n")
+}
+
 $Form = New-Object System.Windows.Forms.Form
 $Form.Text = "RazorWear"
 $Form.StartPosition = "CenterScreen"
@@ -153,6 +245,17 @@ $MenuStrip.Items.Add($AboutMenuItem) | Out-Null
 
 $ReportBugMenuItem = New-Object System.Windows.Forms.ToolStripMenuItem("Report Bug")
 $MenuStrip.Items.Add($ReportBugMenuItem) | Out-Null
+
+$UpdatesMenu = New-Object System.Windows.Forms.ToolStripMenuItem("Updates")
+$CheckUpdatesMenuItem = New-Object System.Windows.Forms.ToolStripMenuItem("Check Updates")
+$WindowsUpdateMenuItem = New-Object System.Windows.Forms.ToolStripMenuItem("Open Windows Update")
+$StoreUpdatesMenuItem = New-Object System.Windows.Forms.ToolStripMenuItem("Open Store Updates")
+$WindowsUpdateMenuItem.Enabled = $false
+$StoreUpdatesMenuItem.Enabled = $false
+$UpdatesMenu.DropDownItems.Add($CheckUpdatesMenuItem) | Out-Null
+$UpdatesMenu.DropDownItems.Add($WindowsUpdateMenuItem) | Out-Null
+$UpdatesMenu.DropDownItems.Add($StoreUpdatesMenuItem) | Out-Null
+$MenuStrip.Items.Add($UpdatesMenu) | Out-Null
 
 $Header = New-Object System.Windows.Forms.Panel
 $Header.Dock = [System.Windows.Forms.DockStyle]::Fill
@@ -336,6 +439,45 @@ $OpenLogsButton.Size = New-Object System.Drawing.Size(250, 38)
 $OpenLogsButton.Location = New-Object System.Drawing.Point(24, 548)
 Set-ButtonStyle -Button $OpenLogsButton -BackColor ([System.Drawing.Color]::FromArgb(245, 247, 245)) -ForeColor ([System.Drawing.Color]::FromArgb(64, 75, 70))
 $ControlsPanel.Controls.Add($OpenLogsButton)
+
+$UpdatesLabel = New-Object System.Windows.Forms.Label
+$UpdatesLabel.Text = "Updates"
+$UpdatesLabel.AutoSize = $true
+$UpdatesLabel.Font = New-Font 9 ([System.Drawing.FontStyle]::Bold)
+$UpdatesLabel.ForeColor = $Ink
+$UpdatesLabel.Location = New-Object System.Drawing.Point(22, 604)
+$ControlsPanel.Controls.Add($UpdatesLabel)
+
+$UpdatesNote = New-Object System.Windows.Forms.Label
+$UpdatesNote.Text = "Check Microsoft updates, then choose whether to open update screens."
+$UpdatesNote.Size = New-Object System.Drawing.Size(250, 44)
+$UpdatesNote.Font = New-Font 8
+$UpdatesNote.ForeColor = $SoftMuted
+$UpdatesNote.Location = New-Object System.Drawing.Point(24, 626)
+$ControlsPanel.Controls.Add($UpdatesNote)
+
+$CheckUpdatesButton = New-Object System.Windows.Forms.Button
+$CheckUpdatesButton.Text = "Check Updates"
+$CheckUpdatesButton.Size = New-Object System.Drawing.Size(250, 40)
+$CheckUpdatesButton.Location = New-Object System.Drawing.Point(24, 674)
+Set-ButtonStyle -Button $CheckUpdatesButton -BackColor ([System.Drawing.Color]::FromArgb(230, 239, 236)) -ForeColor $Brand
+$ControlsPanel.Controls.Add($CheckUpdatesButton)
+
+$WindowsUpdateButton = New-Object System.Windows.Forms.Button
+$WindowsUpdateButton.Text = "Windows Update"
+$WindowsUpdateButton.Size = New-Object System.Drawing.Size(250, 38)
+$WindowsUpdateButton.Location = New-Object System.Drawing.Point(24, 724)
+$WindowsUpdateButton.Enabled = $false
+Set-ButtonStyle -Button $WindowsUpdateButton -BackColor ([System.Drawing.Color]::FromArgb(245, 247, 245)) -ForeColor ([System.Drawing.Color]::FromArgb(64, 75, 70))
+$ControlsPanel.Controls.Add($WindowsUpdateButton)
+
+$StoreUpdatesButton = New-Object System.Windows.Forms.Button
+$StoreUpdatesButton.Text = "Store Updates"
+$StoreUpdatesButton.Size = New-Object System.Drawing.Size(250, 38)
+$StoreUpdatesButton.Location = New-Object System.Drawing.Point(24, 770)
+$StoreUpdatesButton.Enabled = $false
+Set-ButtonStyle -Button $StoreUpdatesButton -BackColor ([System.Drawing.Color]::FromArgb(245, 247, 245)) -ForeColor ([System.Drawing.Color]::FromArgb(64, 75, 70))
+$ControlsPanel.Controls.Add($StoreUpdatesButton)
 
 $Tabs = New-Object System.Windows.Forms.TabControl
 $Tabs.Dock = [System.Windows.Forms.DockStyle]::Fill
@@ -746,6 +888,12 @@ function Set-BusyState {
     $PreviewButton.Enabled = -not $Busy
     $CleanButton.Enabled = -not $Busy
     $OpenLogsButton.Enabled = -not $Busy
+    $CheckUpdatesButton.Enabled = -not $Busy
+    $CheckUpdatesMenuItem.Enabled = -not $Busy
+    $WindowsUpdateButton.Enabled = (-not $Busy) -and $script:UpdateReportReady
+    $StoreUpdatesButton.Enabled = (-not $Busy) -and $script:UpdateReportReady
+    $WindowsUpdateMenuItem.Enabled = (-not $Busy) -and $script:UpdateReportReady
+    $StoreUpdatesMenuItem.Enabled = (-not $Busy) -and $script:UpdateReportReady
     $AgeInput.Enabled = -not $Busy
     $RecycleCheck.Enabled = -not $Busy
     $CleanupOptions.Enabled = -not $Busy
@@ -763,6 +911,7 @@ function Set-BusyState {
 }
 
 $script:OperationBusy = $false
+$script:UpdateReportReady = $false
 
 function Complete-RazorWearOperation {
     param([object]$Job)
@@ -856,6 +1005,53 @@ function Start-RazorWearOperation {
     })
 }
 
+function Start-UpdateCheck {
+    if ($script:OperationBusy) {
+        return
+    }
+
+    $script:OperationBusy = $true
+    $script:UpdateReportReady = $false
+    $StatusChip.Text = "Checking"
+    $StatusChip.ForeColor = $Warning
+    $StatusChip.BackColor = [System.Drawing.Color]::FromArgb(251, 237, 222)
+    $StatusLabel.Text = "Checking Microsoft updates..."
+    $StatusLabel.ForeColor = $Ink
+    $StatusSubtext.Text = "RazorWear checks status only. You choose whether to update."
+    Show-OutputView
+    Set-OutputText "Checking Windows Update and Microsoft Store app updates..."
+    Set-BusyState $true "Checking Microsoft updates..."
+
+    try {
+        $report = Get-UpdateReport
+        $script:UpdateReportReady = $true
+        Set-BusyState $false
+        Show-OutputView
+        Set-OutputText $report
+        $StatusChip.Text = "Updates checked"
+        $StatusChip.ForeColor = $Success
+        $StatusChip.BackColor = $SuccessBack
+        $StatusLabel.Text = "Update check complete."
+        $StatusLabel.ForeColor = $Success
+        $StatusSubtext.Text = "Review the report, then choose whether to open Windows Update or Store Updates."
+    }
+    catch {
+        Set-BusyState $false
+        Show-OutputView
+        Set-OutputText $_.Exception.Message
+        $StatusChip.Text = "Needs attention"
+        $StatusChip.ForeColor = $Warning
+        $StatusChip.BackColor = [System.Drawing.Color]::FromArgb(251, 237, 222)
+        $StatusLabel.Text = "Update check needs attention."
+        $StatusLabel.ForeColor = $Warning
+        $StatusSubtext.Text = "Open Windows Update or Microsoft Store to check manually."
+    }
+    finally {
+        $script:OperationBusy = $false
+        Set-BusyState $false
+    }
+}
+
 $PreviewButton.Add_Click({
     Start-RazorWearOperation -Mode "Preview"
 })
@@ -888,6 +1084,30 @@ $OpenLogsButton.Add_Click({
     $LogDir = Join-Path $AppRoot "logs"
     New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
     Start-Process explorer.exe $LogDir
+})
+
+$CheckUpdatesButton.Add_Click({
+    Start-UpdateCheck
+})
+
+$CheckUpdatesMenuItem.Add_Click({
+    Start-UpdateCheck
+})
+
+$WindowsUpdateButton.Add_Click({
+    Start-Process "ms-settings:windowsupdate"
+})
+
+$WindowsUpdateMenuItem.Add_Click({
+    Start-Process "ms-settings:windowsupdate"
+})
+
+$StoreUpdatesButton.Add_Click({
+    Start-Process "ms-windows-store://downloadsandupdates"
+})
+
+$StoreUpdatesMenuItem.Add_Click({
+    Start-Process "ms-windows-store://downloadsandupdates"
 })
 
 $ExitMenuItem.Add_Click({
