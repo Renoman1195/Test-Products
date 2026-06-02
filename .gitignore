@@ -16,3 +16,7 @@ node_modules/
 dist/
 build/
 .env
+
+# Store packaging output
+RazorWear/StoreSubmission/PackageBuild/
+RazorWear/StoreSubmission/Packages/

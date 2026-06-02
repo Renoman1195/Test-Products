@@ -8,7 +8,7 @@ The app does not collect, transmit, sell, share, or store personal data outside 
 
 The app does not require an account.
 
-The app does not connect to the internet.
+The app does not connect to the internet automatically. Microsoft update checks run only when the user chooses them.
 
 The app does not include ads, analytics, telemetry, or third-party trackers.
 
@@ -53,4 +53,10 @@ Skipped or protected files are logged locally.
 
 ## Local Logs
 
-Logs are plain text files saved only in the local app folder. They are not uploaded.
+Logs are plain text files saved under `%LOCALAPPDATA%\TraceWear\RazorWear\logs`. They are not uploaded.
+
+## Updates
+
+The app can check Windows Update and Microsoft Store app updates only after a user action.
+
+The app does not run a background updater, silently install app updates, or modify its installed package files.

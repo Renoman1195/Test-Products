@@ -19,7 +19,8 @@ if (-not $Preview -and -not $Clean) {
 }
 
 $ProjectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-$LogDir = Join-Path $ProjectRoot "logs"
+$LocalDataRoot = Join-Path ([Environment]::GetFolderPath("LocalApplicationData")) "TraceWear\RazorWear"
+$LogDir = Join-Path $LocalDataRoot "logs"
 New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
 
 $Timestamp = Get-Date -Format "yyyyMMdd-HHmmss"

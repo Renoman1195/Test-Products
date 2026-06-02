@@ -9,6 +9,7 @@
   <Identity
     Name="RazorWear"
     Publisher="CN=Jacob Brown"
+    ProcessorArchitecture="x64"
     Version="0.5.2.0" />
 
   <Properties>

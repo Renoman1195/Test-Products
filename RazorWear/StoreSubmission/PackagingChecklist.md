@@ -14,14 +14,35 @@
 
 - Install Visual Studio with Windows app packaging tools, or install MSIX Packaging Tool.
 - Build or verify the final `RazorWear.exe` launcher.
-- Package RazorWear as a desktop MSIX app.
+- Package RazorWear as a desktop MSIX app with `StoreSubmission/Build-StorePackage.ps1`.
+- Sign the package with a certificate whose subject matches the manifest publisher.
 - Use the generated assets from `Assets`.
 - Include the Store screenshot from `Screenshots`.
 - Verify the app launches from the package.
 - Verify preview mode runs.
 - Verify clean mode asks for confirmation.
 - Verify regular cleanup skips Recycle Bin.
-- Run Windows App Certification Kit on the final package.
+- Run Windows App Certification Kit on the final signed package from an elevated shell.
+
+## Local Commands
+
+Build unsigned package:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\StoreSubmission\Build-StorePackage.ps1
+```
+
+Build and sign with a local test certificate:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\StoreSubmission\Build-StorePackage.ps1 -Sign -CertificateThumbprint YOUR_CERT_THUMBPRINT
+```
+
+Run WACK from an elevated shell:
+
+```powershell
+& "C:\Program Files (x86)\Windows Kits\10\App Certification Kit\appcert.exe" test -appxpackagepath ".\StoreSubmission\Packages\RazorWear-0.5.2.0.msix" -reportoutputpath ".\StoreSubmission\Packages\WACK\RazorWear-WACK.xml"
+```
 
 ## Privacy
 
@@ -43,4 +64,5 @@
 - No account requirement.
 - No background service.
 - No personal folder cleanup.
-- Local logs only.
+- Local logs only under `%LOCALAPPDATA%\TraceWear\RazorWear\logs`.
+- Update checks are user-triggered only.

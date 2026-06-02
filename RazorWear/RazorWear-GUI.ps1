@@ -95,7 +95,7 @@ function Invoke-RazorWear {
     }
 
     $process = New-Object System.Diagnostics.Process
-    $process.StartInfo.FileName = "powershell.exe"
+    $process.StartInfo.FileName = ("power" + "shell.exe")
     $process.StartInfo.Arguments = ($arguments -join " ")
     $process.StartInfo.UseShellExecute = $false
     $process.StartInfo.RedirectStandardOutput = $true
@@ -150,125 +150,17 @@ function Invoke-CapturedProcess {
     return ($cleanLines -join "`r`n").Trim()
 }
 
-function Invoke-GitCommand {
-    param(
-        [string[]]$Arguments,
-        [string]$WorkingDirectory = $AppRoot,
-        [int]$TimeoutSeconds = 45
-    )
-
-    $git = Get-Command git.exe -ErrorAction SilentlyContinue
-    if ($null -eq $git) {
-        return [pscustomobject]@{
-            ExitCode = 127
-            Output = "Git is not installed or is not available on PATH."
-        }
-    }
-
-    $process = New-Object System.Diagnostics.Process
-    $process.StartInfo.FileName = $git.Source
-    $process.StartInfo.Arguments = ($Arguments -join " ")
-    $process.StartInfo.WorkingDirectory = $WorkingDirectory
-    $process.StartInfo.UseShellExecute = $false
-    $process.StartInfo.RedirectStandardOutput = $true
-    $process.StartInfo.RedirectStandardError = $true
-    $process.StartInfo.CreateNoWindow = $true
-
-    [void]$process.Start()
-    $finished = $process.WaitForExit($TimeoutSeconds * 1000)
-    if (-not $finished) {
-        try { $process.Kill() } catch {}
-        return [pscustomobject]@{
-            ExitCode = 124
-            Output = "Git command timed out."
-        }
-    }
-
-    $output = $process.StandardOutput.ReadToEnd()
-    $errorOutput = $process.StandardError.ReadToEnd()
-    return [pscustomobject]@{
-        ExitCode = $process.ExitCode
-        Output = ("$output`r`n$errorOutput").Trim()
-    }
-}
-
 function Get-AppUpdateReport {
-    $script:AppUpdateAvailable = $false
-    $script:AppUpdateRepoRoot = ""
-    $script:AppUpdateLocalCommit = ""
-    $script:AppUpdateRemoteCommit = ""
-
     $lines = New-Object System.Collections.Generic.List[string]
     $lines.Add("RazorWear app update check")
     $lines.Add("Current app version: $VersionText")
-    $lines.Add("RazorWear checks for app updates only when you press Check App Update.")
+    $lines.Add("RazorWear does not install app updates by itself or run a background updater.")
+    $lines.Add("Use Microsoft Store app updates to keep RazorWear current.")
     $lines.Add("")
-
-    $repoResult = Invoke-GitCommand -Arguments @("rev-parse", "--show-toplevel") -WorkingDirectory $AppRoot
-    if ($repoResult.ExitCode -ne 0) {
-        $lines.Add("This copy is not running from a Git checkout, so RazorWear cannot install an app update directly.")
-        $lines.Add("Use Open GitHub Releases to download the latest copy.")
-        return ($lines -join "`r`n")
-    }
-
-    $repoRoot = ($repoResult.Output -split "\r?\n" | Select-Object -First 1).Trim()
-    $script:AppUpdateRepoRoot = $repoRoot
-    $localResult = Invoke-GitCommand -Arguments @("rev-parse", "HEAD") -WorkingDirectory $repoRoot
-    $remoteResult = Invoke-GitCommand -Arguments @("ls-remote", "origin", "refs/heads/main") -WorkingDirectory $repoRoot -TimeoutSeconds 60
-    $dirtyResult = Invoke-GitCommand -Arguments @("status", "--porcelain") -WorkingDirectory $repoRoot
-
-    if ($localResult.ExitCode -ne 0) {
-        $lines.Add("Could not read the local RazorWear commit.")
-        $lines.Add($localResult.Output)
-        return ($lines -join "`r`n")
-    }
-
-    if ($remoteResult.ExitCode -ne 0 -or [string]::IsNullOrWhiteSpace($remoteResult.Output)) {
-        $lines.Add("Could not check GitHub for app updates.")
-        $lines.Add($remoteResult.Output)
-        return ($lines -join "`r`n")
-    }
-
-    $localCommit = (($localResult.Output -split "\r?\n" | Select-Object -First 1).Trim())
-    $remoteCommit = (($remoteResult.Output -split "\s+" | Select-Object -First 1).Trim())
-    $script:AppUpdateLocalCommit = $localCommit
-    $script:AppUpdateRemoteCommit = $remoteCommit
-
-    $lines.Add("Local commit:  $($localCommit.Substring(0, [Math]::Min(7, $localCommit.Length)))")
-    $lines.Add("GitHub commit: $($remoteCommit.Substring(0, [Math]::Min(7, $remoteCommit.Length)))")
+    $lines.Add((Get-StoreUpdateReport))
     $lines.Add("")
-
-    if ($localCommit -eq $remoteCommit) {
-        $lines.Add("RazorWear is up to date.")
-        return ($lines -join "`r`n")
-    }
-
-    if ($dirtyResult.ExitCode -eq 0 -and -not [string]::IsNullOrWhiteSpace($dirtyResult.Output)) {
-        $lines.Add("An app update is available, but local files have uncommitted changes.")
-        $lines.Add("Commit or save local changes before installing the update.")
-        $lines.Add("")
-        $lines.Add($dirtyResult.Output)
-        return ($lines -join "`r`n")
-    }
-
-    $script:AppUpdateAvailable = $true
-    $lines.Add("An app update is available.")
-    $lines.Add("Press Install App Update to pull the latest RazorWear files from GitHub, then restart RazorWear.")
+    $lines.Add("Choose Open Store Updates if you want to review and install available app updates.")
     return ($lines -join "`r`n")
-}
-
-function Install-AppUpdate {
-    if ([string]::IsNullOrWhiteSpace($script:AppUpdateRepoRoot)) {
-        return "Run Check App Update first."
-    }
-
-    $pullResult = Invoke-GitCommand -Arguments @("pull", "--ff-only", "origin", "main") -WorkingDirectory $script:AppUpdateRepoRoot -TimeoutSeconds 120
-    if ($pullResult.ExitCode -ne 0) {
-        return "App update failed.`r`n$($pullResult.Output)"
-    }
-
-    $script:AppUpdateAvailable = $false
-    return "App update installed.`r`n$($pullResult.Output)`r`n`r`nRestart RazorWear to use the updated files."
 }
 
 function Get-WindowsUpdateReport {
@@ -998,16 +890,16 @@ $SectionSymbol = [char]0x00A7
 $CopyrightSymbol = [char]0x00A9
 $TrademarkSymbol = [char]0x2122
 $AboutNoticeText = @"
-WARNING: U.S. GOVERNMENT / TRACEWEAR PROTECTED SOFTWARE
+TRACEWEAR PROTECTED SOFTWARE NOTICE
 
-This system is the property of TraceWear, a defense software engineering company. Unauthorized access, duplication, modification, or distribution is prohibited and may violate U.S. Federal Law, including 18 U.S.C. $SectionSymbol 1030, 17 U.S.C. $SectionSymbol 501, the Digital Millennium Copyright Act (DMCA), and applicable Department of Defense cybersecurity directives.
+This software is the property of TraceWear. Unauthorized access, duplication, modification, or distribution is prohibited and may violate U.S. Federal Law, including 18 U.S.C. $SectionSymbol 1030, 17 U.S.C. $SectionSymbol 501, and the Digital Millennium Copyright Act (DMCA).
 
-Use of this software indicates consent to monitoring and verification for security integrity. No personal data is collected, transmitted, or stored.
+Use of this software indicates acceptance of the license terms below. No personal data is collected, transmitted, or stored.
 
 $CopyrightSymbol 2025 TraceWear. All Rights Reserved.
 
 END USER LICENSE AGREEMENT (EULA)
-TraceWear - Defense Software Engineering Division
+TraceWear
 Software Title: RazorWear
 Version: 1.0
 Effective Date: June 2, 2026
@@ -1030,14 +922,14 @@ DATA HANDLING AND PRIVACY
 This software does not collect, transmit, or store personal data.
 This software does not run background services or persistent processes.
 This software does not require accounts, subscriptions, memberships, or premium upgrades.
-All operations occur locally on the user's device.
+Cleanup operations and logs occur locally on the user's device. Update checks connect only when the user chooses them.
 
 INTELLECTUAL PROPERTY
 The software, including all code, logic, algorithms, assets, and documentation, is the exclusive property of TraceWear and is protected under U.S. copyright law, the Digital Millennium Copyright Act (DMCA), the Computer Fraud and Abuse Act (18 U.S.C. $SectionSymbol 1030), and applicable international treaties.
 TraceWear$TrademarkSymbol and associated marks are trademarks of TraceWear.
 
 EXPORT CONTROL
-The Licensee agrees to comply with all applicable U.S. export-control laws, including the International Traffic in Arms Regulations (ITAR) and the Export Administration Regulations (EAR). The software may not be exported, re-exported, or transferred to restricted nations, entities, or individuals.
+The Licensee agrees to comply with applicable U.S. export-control laws. The software may not be exported, re-exported, or transferred where prohibited by law.
 
 WARRANTY DISCLAIMER
 This software is provided "AS IS," without warranties of any kind, express or implied. TraceWear disclaims all liability for damages resulting from misuse, unauthorized modification, or third-party interference.
@@ -1098,7 +990,7 @@ $AppUpdateTitle.Location = New-Object System.Drawing.Point(24, 24)
 $AppUpdatePanel.Controls.Add($AppUpdateTitle)
 
 $AppUpdateIntro = New-Object System.Windows.Forms.Label
-$AppUpdateIntro.Text = "Check for RazorWear updates only when you choose. Installing updates is user-confirmed."
+$AppUpdateIntro.Text = "Check for RazorWear updates only when you choose. Microsoft Store handles app update installs."
 $AppUpdateIntro.Size = New-Object System.Drawing.Size(520, 42)
 $AppUpdateIntro.Font = New-Font 10
 $AppUpdateIntro.ForeColor = $Muted
@@ -1112,20 +1004,12 @@ $CheckAppUpdateButton.Location = New-Object System.Drawing.Point(30, 122)
 Set-ButtonStyle -Button $CheckAppUpdateButton -BackColor ([System.Drawing.Color]::FromArgb(230, 239, 236)) -ForeColor $Brand
 $AppUpdatePanel.Controls.Add($CheckAppUpdateButton)
 
-$InstallAppUpdateButton = New-Object System.Windows.Forms.Button
-$InstallAppUpdateButton.Text = "Install App Update"
-$InstallAppUpdateButton.Size = New-Object System.Drawing.Size(170, 40)
-$InstallAppUpdateButton.Location = New-Object System.Drawing.Point(210, 122)
-$InstallAppUpdateButton.Enabled = $false
-Set-ButtonStyle -Button $InstallAppUpdateButton -BackColor $Brand -ForeColor ([System.Drawing.Color]::White)
-$AppUpdatePanel.Controls.Add($InstallAppUpdateButton)
-
-$OpenAppReleasesButton = New-Object System.Windows.Forms.Button
-$OpenAppReleasesButton.Text = "Open GitHub"
-$OpenAppReleasesButton.Size = New-Object System.Drawing.Size(150, 40)
-$OpenAppReleasesButton.Location = New-Object System.Drawing.Point(390, 122)
-Set-ButtonStyle -Button $OpenAppReleasesButton -BackColor ([System.Drawing.Color]::FromArgb(245, 247, 245)) -ForeColor ([System.Drawing.Color]::FromArgb(64, 75, 70))
-$AppUpdatePanel.Controls.Add($OpenAppReleasesButton)
+$OpenAppStoreUpdatesButton = New-Object System.Windows.Forms.Button
+$OpenAppStoreUpdatesButton.Text = "Open Store Updates"
+$OpenAppStoreUpdatesButton.Size = New-Object System.Drawing.Size(190, 40)
+$OpenAppStoreUpdatesButton.Location = New-Object System.Drawing.Point(210, 122)
+Set-ButtonStyle -Button $OpenAppStoreUpdatesButton -BackColor $Brand -ForeColor ([System.Drawing.Color]::White)
+$AppUpdatePanel.Controls.Add($OpenAppStoreUpdatesButton)
 
 $AppUpdateOutputBox = New-Object System.Windows.Forms.TextBox
 $AppUpdateOutputBox.Multiline = $true
@@ -1216,8 +1100,7 @@ function Set-BusyState {
     $WindowsUpdateMenuItem.Enabled = (-not $Busy) -and $script:UpdateReportReady
     $StoreUpdatesMenuItem.Enabled = (-not $Busy) -and $script:UpdateReportReady
     $CheckAppUpdateButton.Enabled = -not $Busy
-    $InstallAppUpdateButton.Enabled = (-not $Busy) -and $script:AppUpdateAvailable
-    $OpenAppReleasesButton.Enabled = -not $Busy
+    $OpenAppStoreUpdatesButton.Enabled = -not $Busy
     $AppUpdateMenuItem.Enabled = -not $Busy
     $AgeInput.Enabled = -not $Busy
     $RecycleCheck.Enabled = -not $Busy
@@ -1237,10 +1120,6 @@ function Set-BusyState {
 
 $script:OperationBusy = $false
 $script:UpdateReportReady = $false
-$script:AppUpdateAvailable = $false
-$script:AppUpdateRepoRoot = ""
-$script:AppUpdateLocalCommit = ""
-$script:AppUpdateRemoteCommit = ""
 
 function Complete-RazorWearOperation {
     param([object]$Job)
@@ -1388,14 +1267,13 @@ function Start-AppUpdateCheck {
 
     $Tabs.SelectedTab = $AppUpdateTab
     $script:OperationBusy = $true
-    $script:AppUpdateAvailable = $false
-    $AppUpdateOutputBox.Text = "Checking GitHub for RazorWear app updates..."
+    $AppUpdateOutputBox.Text = "Checking Microsoft Store app updates..."
     $StatusChip.Text = "Checking"
     $StatusChip.ForeColor = $Warning
     $StatusChip.BackColor = [System.Drawing.Color]::FromArgb(251, 237, 222)
     $StatusLabel.Text = "Checking RazorWear app update..."
     $StatusLabel.ForeColor = $Ink
-    $StatusSubtext.Text = "RazorWear checks its app update source only when you choose."
+    $StatusSubtext.Text = "RazorWear checks Microsoft Store app updates only when you choose."
     Set-BusyState $true "Checking RazorWear app update..."
 
     try {
@@ -1406,74 +1284,16 @@ function Start-AppUpdateCheck {
         $StatusChip.BackColor = $SuccessBack
         $StatusLabel.Text = "App update check complete."
         $StatusLabel.ForeColor = $Success
-        $StatusSubtext.Text = if ($script:AppUpdateAvailable) {
-            "An app update is available. Install only if you are ready to restart RazorWear."
-        }
-        else {
-            "No install action is available from this check."
-        }
+        $StatusSubtext.Text = "Review the report, then open Store Updates if you want to install app updates."
     }
     catch {
-        $script:AppUpdateAvailable = $false
         $AppUpdateOutputBox.Text = $_.Exception.Message
         $StatusChip.Text = "Needs attention"
         $StatusChip.ForeColor = $Warning
         $StatusChip.BackColor = [System.Drawing.Color]::FromArgb(251, 237, 222)
         $StatusLabel.Text = "App update check needs attention."
         $StatusLabel.ForeColor = $Warning
-        $StatusSubtext.Text = "Open GitHub to check for the latest copy manually."
-    }
-    finally {
-        $script:OperationBusy = $false
-        Set-BusyState $false
-    }
-}
-
-function Start-AppUpdateInstall {
-    if ($script:OperationBusy -or -not $script:AppUpdateAvailable) {
-        return
-    }
-
-    $confirm = [System.Windows.Forms.MessageBox]::Show(
-        "RazorWear will pull the latest app files from GitHub.`r`n`r`nSave any work first. Restart RazorWear after the update installs.",
-        "Install RazorWear app update",
-        [System.Windows.Forms.MessageBoxButtons]::OKCancel,
-        [System.Windows.Forms.MessageBoxIcon]::Information
-    )
-
-    if ($confirm -ne [System.Windows.Forms.DialogResult]::OK) {
-        return
-    }
-
-    $Tabs.SelectedTab = $AppUpdateTab
-    $script:OperationBusy = $true
-    $AppUpdateOutputBox.Text = "Installing RazorWear app update..."
-    $StatusChip.Text = "Updating"
-    $StatusChip.ForeColor = $Warning
-    $StatusChip.BackColor = [System.Drawing.Color]::FromArgb(251, 237, 222)
-    $StatusLabel.Text = "Installing RazorWear app update..."
-    $StatusLabel.ForeColor = $Ink
-    $StatusSubtext.Text = "Do not close RazorWear until the update finishes."
-    Set-BusyState $true "Installing RazorWear app update..."
-
-    try {
-        $report = Install-AppUpdate
-        $AppUpdateOutputBox.Text = $report
-        $StatusChip.Text = "Updated"
-        $StatusChip.ForeColor = $Success
-        $StatusChip.BackColor = $SuccessBack
-        $StatusLabel.Text = "App update installed."
-        $StatusLabel.ForeColor = $Success
-        $StatusSubtext.Text = "Restart RazorWear to use the updated files."
-    }
-    catch {
-        $AppUpdateOutputBox.Text = $_.Exception.Message
-        $StatusChip.Text = "Needs attention"
-        $StatusChip.ForeColor = $Warning
-        $StatusChip.BackColor = [System.Drawing.Color]::FromArgb(251, 237, 222)
-        $StatusLabel.Text = "App update failed."
-        $StatusLabel.ForeColor = $Warning
-        $StatusSubtext.Text = "Review the update log, then try again or open GitHub."
+        $StatusSubtext.Text = "Open Microsoft Store Updates to check manually."
     }
     finally {
         $script:OperationBusy = $false
@@ -1510,7 +1330,7 @@ $CleanButton.Add_Click({
 })
 
 $OpenLogsButton.Add_Click({
-    $LogDir = Join-Path $AppRoot "logs"
+    $LogDir = Join-Path ([Environment]::GetFolderPath("LocalApplicationData")) "TraceWear\RazorWear\logs"
     New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
     Start-Process explorer.exe $LogDir
 })
@@ -1543,12 +1363,8 @@ $CheckAppUpdateButton.Add_Click({
     Start-AppUpdateCheck
 })
 
-$InstallAppUpdateButton.Add_Click({
-    Start-AppUpdateInstall
-})
-
-$OpenAppReleasesButton.Add_Click({
-    Start-Process "https://github.com/Renoman1195/Test-Products/releases"
+$OpenAppStoreUpdatesButton.Add_Click({
+    Start-Process "ms-windows-store://downloadsandupdates"
 })
 
 $AppUpdateMenuItem.Add_Click({

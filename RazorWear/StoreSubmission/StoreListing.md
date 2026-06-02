@@ -34,6 +34,7 @@ RazorWear™ focuses on low-risk cleanup areas such as temp files, browser cache
 - Info tab explains the no-tracking, no-data-collection safety promise
 - Polished desktop UI with clear status feedback
 - Local-only logs
+- User-triggered Windows and Microsoft Store update checks
 - No account required
 - No tracking or telemetry
 - No background service
@@ -48,11 +49,11 @@ No mature content. Utility app.
 
 ## Support Contact
 
-REPLACE_WITH_SUPPORT_EMAIL_OR_WEBSITE
+https://github.com/Renoman1195/Test-Products/issues/new?title=RazorWear%20support
 
 ## Privacy Policy URL
 
-REPLACE_WITH_PUBLIC_PRIVACY_POLICY_URL
+https://raw.githubusercontent.com/Renoman1195/Test-Products/main/RazorWear/StoreSubmission/PrivacyPolicy.html
 
 ## Trademark Notice
 

@@ -10,9 +10,10 @@ It is designed to be safe by default:
 - Downloads clutter and duplicate files are reported only and are never auto-deleted.
 - Browser cookies and history require an explicit user choice.
 - It skips files that are locked or unavailable.
-- It writes a local cleanup log to the `logs` folder on your computer.
+- It writes a local cleanup log under `%LOCALAPPDATA%\TraceWear\RazorWear\logs`.
 - The desktop app includes an Info tab explaining the no-tracking, no-data-collection promise.
 - The polished desktop UI includes a clear status area, branded header, and simple cleanup controls.
+- Microsoft update checks run only when you choose them.
 
 ## What It Cleans
 
@@ -52,7 +53,7 @@ powershell -ExecutionPolicy Bypass -File .\RazorWear.ps1 -Preview -IncludeBrowse
 
 ## Privacy
 
-RazorWear does not collect, upload, sell, or transmit any information. It does not connect to the internet. Logs are saved only on your computer so you can review what happened.
+RazorWear does not collect, upload, sell, or transmit personal information. Cleanup and logs stay local. Update checks connect only when you choose them and use Microsoft update tools.
 
 The Info tab inside the app explains this in plain language for users: no info grabbing, no tracking, safe cleanup, simple and reliable.
 

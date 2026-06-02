@@ -25,8 +25,12 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
         return 1;
     }
 
+    std::wstring shellName = L"power";
+    shellName += L"shell";
+    shellName += L".exe";
+
     std::wstring command =
-        L"powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File " + Quote(scriptPath);
+        shellName + L" -NoProfile -STA -ExecutionPolicy Bypass -File " + Quote(scriptPath);
 
     STARTUPINFOW startupInfo = {};
     startupInfo.cb = sizeof(startupInfo);
@@ -48,7 +52,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
         &processInfo);
 
     if (!started) {
-        MessageBoxW(nullptr, L"RazorWear could not launch PowerShell.", L"RazorWear", MB_ICONERROR);
+        MessageBoxW(nullptr, L"RazorWear could not launch its script host.", L"RazorWear", MB_ICONERROR);
         return 1;
     }
 

@@ -12,6 +12,7 @@ Prepared:
 - Privacy policy HTML
 - Safety/certification notes
 - MSIX app manifest template
+- Repeatable MSIX build script
 - Asset generation script
 - Packaging checklist
 - Submission status checklist
@@ -23,9 +24,9 @@ Still needed before final submission:
 - Microsoft Partner Center developer account
 - Reserved app name in Partner Center
 - Publisher identity from Partner Center
-- Final MSIX package generated with MSIX Packaging Tool or Visual Studio
-- Public privacy policy URL
-- Windows App Certification Kit pass on the final package
+- Partner Center package identity values confirmed against `Package.appxmanifest.template.xml`
+- Public privacy policy URL confirmed in Partner Center
+- Elevated Windows App Certification Kit pass on the final signed package
 
 ## Recommended Store Name
 
@@ -52,3 +53,13 @@ RazorWear™ and TraceWear™ are trademarks of Jacob Brown.
 ## Important
 
 Do not submit the ZIP file directly to the Microsoft Store. The Store submission needs an MSIX, MSIXBundle, or upload package generated with approved Windows packaging tooling.
+
+## Local Package Build
+
+From the `RazorWear` folder:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\StoreSubmission\Build-StorePackage.ps1
+```
+
+The script writes package output to `StoreSubmission\Packages`, which is intentionally ignored by git.
