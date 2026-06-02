@@ -656,14 +656,33 @@ $InfoPanel.Controls.Add($InfoFooter)
 function Set-OutputText {
     param([string]$Text)
 
-    $OutputBox.Text = $Text
-    $lineCount = @($Text -split "\r?\n").Count
-    if ($lineCount -gt 18 -or $Text.Length -gt 1400) {
+    $DisplayText = Format-RazorWearOutput -Text $Text
+    $OutputBox.Text = $DisplayText
+    $lineCount = @($DisplayText -split "\r?\n").Count
+    if ($lineCount -gt 18 -or $DisplayText.Length -gt 1400) {
         $OutputBox.ScrollBars = [System.Windows.Forms.ScrollBars]::Vertical
     }
     else {
         $OutputBox.ScrollBars = [System.Windows.Forms.ScrollBars]::None
     }
+}
+
+function Format-RazorWearOutput {
+    param([string]$Text)
+
+    if ([string]::IsNullOrWhiteSpace($Text)) {
+        return ""
+    }
+
+    $normalized = $Text.Trim()
+    $normalized = $normalized -replace "(\])\s*(?=\[\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\])", "`r`n"
+    $normalized = $normalized -replace "\s*(?=\[\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\]\s+Scanning:)", "`r`n"
+    $normalized = $normalized -replace "\s*(?=\[\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\]\s+Recycle Bin)", "`r`n"
+    $normalized = $normalized -replace "\s*(?=\[\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\]\s+Downloads clutter)", "`r`n"
+    $normalized = $normalized -replace "\s*(?=\[\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\]\s+Duplicate file)", "`r`n"
+    $normalized = $normalized -replace "\r?\n{3,}", "`r`n`r`n"
+
+    return $normalized
 }
 
 function Show-OutputView {
@@ -704,65 +723,59 @@ function Set-BusyState {
     [System.Windows.Forms.Application]::DoEvents()
 }
 
-$Worker = New-Object System.ComponentModel.BackgroundWorker
-$Worker.Add_DoWork({
-    param($sender, $eventArgs)
+$script:OperationBusy = $false
 
-    $job = $eventArgs.Argument
-    $output = Invoke-RazorWear `
-        -Mode $job.Mode `
-        -OlderThanDays $job.OlderThanDays `
-        -IncludeRecycleBin $job.IncludeRecycleBin `
-        -IncludeBrowserCache $job.IncludeBrowserCache `
-        -IncludeOldLogs $job.IncludeOldLogs `
-        -IncludeUpdateLeftovers $job.IncludeUpdateLeftovers `
-        -IncludeAppLeftovers $job.IncludeAppLeftovers `
-        -IncludeBrowserData $job.IncludeBrowserData `
-        -AnalyzeDownloads $job.AnalyzeDownloads `
-        -FindDuplicates $job.FindDuplicates
-    $eventArgs.Result = [pscustomobject]@{
-        Mode = $job.Mode
-        Output = $output
-    }
-})
+function Complete-RazorWearOperation {
+    param([object]$Job)
 
-$Worker.Add_RunWorkerCompleted({
-    param($sender, $eventArgs)
+    try {
+        $output = Invoke-RazorWear `
+            -Mode $Job.Mode `
+            -OlderThanDays $Job.OlderThanDays `
+            -IncludeRecycleBin $Job.IncludeRecycleBin `
+            -IncludeBrowserCache $Job.IncludeBrowserCache `
+            -IncludeOldLogs $Job.IncludeOldLogs `
+            -IncludeUpdateLeftovers $Job.IncludeUpdateLeftovers `
+            -IncludeAppLeftovers $Job.IncludeAppLeftovers `
+            -IncludeBrowserData $Job.IncludeBrowserData `
+            -AnalyzeDownloads $Job.AnalyzeDownloads `
+            -FindDuplicates $Job.FindDuplicates
 
-    Set-BusyState $false
-
-    if ($eventArgs.Error) {
+        Set-BusyState $false
         Show-OutputView
-        Set-OutputText $eventArgs.Error.Message
+        Set-OutputText $output
+
+        if ($Job.Mode -eq "Preview") {
+            $StatusChip.Text = "Preview ready"
+            $StatusChip.ForeColor = $Brand
+            $StatusLabel.Text = "Preview complete."
+            $StatusSubtext.Text = "Review the results, then clean only if everything looks right."
+        }
+        else {
+            $StatusChip.Text = "Clean"
+            $StatusChip.ForeColor = $Brand
+            $StatusLabel.Text = "Cleanup complete."
+            $StatusSubtext.Text = "A local log was saved in the logs folder."
+        }
+    }
+    catch {
+        Set-BusyState $false
+        Show-OutputView
+        Set-OutputText $_.Exception.Message
         $StatusChip.Text = "Needs attention"
         $StatusChip.ForeColor = $Warning
         $StatusLabel.Text = "Something needs attention."
         $StatusSubtext.Text = "RazorWear stopped before finishing."
-        return
     }
-
-    $result = $eventArgs.Result
-    Show-OutputView
-    Set-OutputText $result.Output
-
-    if ($result.Mode -eq "Preview") {
-        $StatusChip.Text = "Preview ready"
-        $StatusChip.ForeColor = $Brand
-        $StatusLabel.Text = "Preview complete."
-        $StatusSubtext.Text = "Review the results, then clean only if everything looks right."
+    finally {
+        $script:OperationBusy = $false
     }
-    else {
-        $StatusChip.Text = "Clean"
-        $StatusChip.ForeColor = $Brand
-        $StatusLabel.Text = "Cleanup complete."
-        $StatusSubtext.Text = "A local log was saved in the logs folder."
-    }
-})
+}
 
 function Start-RazorWearOperation {
     param([string]$Mode)
 
-    if ($Worker.IsBusy) {
+    if ($script:OperationBusy) {
         return
     }
 
@@ -779,9 +792,10 @@ function Start-RazorWearOperation {
     Show-OutputView
     Set-OutputText $(if ($isPreview) { "Scanning selected cleanup locations..." } else { "Cleaning selected safe locations..." })
 
+    $script:OperationBusy = $true
     Set-BusyState $true $(if ($isPreview) { "Scanning safely..." } else { "Cleaning safely..." })
 
-    $Worker.RunWorkerAsync([pscustomobject]@{
+    Complete-RazorWearOperation -Job ([pscustomobject]@{
         Mode = $Mode
         OlderThanDays = [int]$AgeInput.Value
         IncludeRecycleBin = $RecycleCheck.Checked

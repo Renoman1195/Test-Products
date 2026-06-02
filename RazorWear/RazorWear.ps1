@@ -30,7 +30,7 @@ $Now = Get-Date
 function Write-Log {
     param([string]$Message)
     $line = "[{0}] {1}" -f (Get-Date -Format "yyyy-MM-dd HH:mm:ss"), $Message
-    Write-Host $line
+    [Console]::Out.WriteLine($line)
     Add-Content -Path $LogPath -Value $line
 }
 
