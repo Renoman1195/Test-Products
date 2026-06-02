@@ -44,6 +44,8 @@ $Mint = [System.Drawing.Color]::FromArgb(218, 244, 232)
 $Surface = [System.Drawing.Color]::FromArgb(252, 253, 252)
 $Canvas = [System.Drawing.Color]::FromArgb(242, 246, 244)
 $Warning = [System.Drawing.Color]::FromArgb(191, 123, 54)
+$Success = [System.Drawing.Color]::FromArgb(36, 125, 87)
+$SuccessBack = [System.Drawing.Color]::FromArgb(220, 246, 233)
 
 function Invoke-RazorWear {
     param(
@@ -619,30 +621,45 @@ $InfoIntro.ForeColor = $Muted
 $InfoIntro.Location = New-Object System.Drawing.Point(27, 68)
 $InfoPanel.Controls.Add($InfoIntro)
 
-$InfoBox = New-Object System.Windows.Forms.TextBox
-$InfoBox.Multiline = $true
-$InfoBox.ReadOnly = $true
-$InfoBox.BorderStyle = [System.Windows.Forms.BorderStyle]::None
-$InfoBox.BackColor = [System.Drawing.Color]::FromArgb(250, 251, 250)
-$InfoBox.ForeColor = [System.Drawing.Color]::FromArgb(42, 50, 47)
-$InfoBox.Font = New-Font 10
-$InfoBox.Anchor = "Top, Bottom, Left, Right"
-$InfoBox.Location = New-Object System.Drawing.Point(30, 142)
-$InfoBox.Size = New-Object System.Drawing.Size(512, 284)
-$InfoBox.Text = @"
-No info grabbing
-RazorWear does not collect your name, email, files, location, device ID, browsing history, or usage analytics.
+$InfoScrollPanel = New-Object System.Windows.Forms.Panel
+$InfoScrollPanel.Anchor = "Top, Bottom, Left, Right"
+$InfoScrollPanel.AutoScroll = $true
+$InfoScrollPanel.BackColor = [System.Drawing.Color]::FromArgb(250, 251, 250)
+$InfoScrollPanel.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
+$InfoScrollPanel.Location = New-Object System.Drawing.Point(30, 132)
+$InfoScrollPanel.Size = New-Object System.Drawing.Size(512, 294)
+$InfoPanel.Controls.Add($InfoScrollPanel)
 
-No tracking
-RazorWear does not include ads, telemetry, third-party trackers, or a background service.
+function Add-InfoSection {
+    param(
+        [string]$Heading,
+        [string]$Body,
+        [int]$Top
+    )
 
-Safe cleanup
-Cleanup targets selected safe areas such as temp files, browser cache, old logs, update leftovers, and old installer leftovers. Downloads and duplicates are report-only.
+    $headingLabel = New-Object System.Windows.Forms.Label
+    $headingLabel.Text = $Heading
+    $headingLabel.AutoSize = $false
+    $headingLabel.Size = New-Object System.Drawing.Size(462, 24)
+    $headingLabel.Font = New-Font 10 ([System.Drawing.FontStyle]::Bold)
+    $headingLabel.ForeColor = $Brand
+    $headingLabel.Location = New-Object System.Drawing.Point(18, $Top)
+    $InfoScrollPanel.Controls.Add($headingLabel)
 
-Simple and reliable
-You can preview before cleaning, choose whether to include the Recycle Bin, and review local logs on your own computer.
-"@
-$InfoPanel.Controls.Add($InfoBox)
+    $bodyLabel = New-Object System.Windows.Forms.Label
+    $bodyLabel.Text = $Body
+    $bodyLabel.AutoSize = $false
+    $bodyLabel.Size = New-Object System.Drawing.Size(462, 52)
+    $bodyLabel.Font = New-Font 9
+    $bodyLabel.ForeColor = [System.Drawing.Color]::FromArgb(42, 50, 47)
+    $bodyLabel.Location = New-Object System.Drawing.Point(18, ($Top + 25))
+    $InfoScrollPanel.Controls.Add($bodyLabel)
+}
+
+Add-InfoSection -Heading "No info grabbing" -Body "RazorWear does not collect your name, email, files, location, device ID, browsing history, or usage analytics." -Top 18
+Add-InfoSection -Heading "No tracking" -Body "RazorWear does not include ads, telemetry, third-party trackers, or a background service." -Top 104
+Add-InfoSection -Heading "Safe cleanup" -Body "Cleanup targets selected safe areas such as temp files, browser cache, old logs, update leftovers, and old installer leftovers. Downloads and duplicates are report-only." -Top 190
+Add-InfoSection -Heading "Simple and reliable" -Body "You can preview before cleaning, choose whether to include the Recycle Bin, and review local logs on your own computer." -Top 292
 
 $InfoFooter = New-Object System.Windows.Forms.Label
 $InfoFooter.Text = "Local logs stay local. RazorWear does not connect to the internet."
@@ -652,6 +669,28 @@ $InfoFooter.Font = New-Font 9 ([System.Drawing.FontStyle]::Bold)
 $InfoFooter.ForeColor = $Brand
 $InfoFooter.Location = New-Object System.Drawing.Point(30, 450)
 $InfoPanel.Controls.Add($InfoFooter)
+
+function Update-InfoLayout {
+    $contentWidth = $InfoPanel.ClientSize.Width - 60
+    if ($contentWidth -lt 360) { $contentWidth = 360 }
+
+    $InfoIntro.Size = New-Object System.Drawing.Size($contentWidth, 54)
+    $InfoScrollPanel.Size = New-Object System.Drawing.Size($contentWidth, ($InfoPanel.ClientSize.Height - 196))
+    if ($InfoScrollPanel.Height -lt 220) {
+        $InfoScrollPanel.Height = 220
+    }
+    $sectionWidth = $InfoScrollPanel.ClientSize.Width - 40
+    if ($sectionWidth -lt 320) { $sectionWidth = 320 }
+    foreach ($control in $InfoScrollPanel.Controls) {
+        $control.Width = $sectionWidth
+    }
+    $InfoFooter.Location = New-Object System.Drawing.Point(30, ($InfoPanel.ClientSize.Height - 42))
+    $InfoFooter.Size = New-Object System.Drawing.Size($contentWidth, 30)
+}
+
+$InfoPanel.Add_Resize({
+    Update-InfoLayout
+})
 
 function Set-OutputText {
     param([string]$Text)
@@ -747,14 +786,18 @@ function Complete-RazorWearOperation {
 
         if ($Job.Mode -eq "Preview") {
             $StatusChip.Text = "Preview ready"
-            $StatusChip.ForeColor = $Brand
+            $StatusChip.ForeColor = $Success
+            $StatusChip.BackColor = $SuccessBack
             $StatusLabel.Text = "Preview complete."
+            $StatusLabel.ForeColor = $Success
             $StatusSubtext.Text = "Review the results, then clean only if everything looks right."
         }
         else {
             $StatusChip.Text = "Clean"
-            $StatusChip.ForeColor = $Brand
+            $StatusChip.ForeColor = $Success
+            $StatusChip.BackColor = $SuccessBack
             $StatusLabel.Text = "Cleanup complete."
+            $StatusLabel.ForeColor = $Success
             $StatusSubtext.Text = "A local log was saved in the logs folder."
         }
     }
@@ -764,7 +807,9 @@ function Complete-RazorWearOperation {
         Set-OutputText $_.Exception.Message
         $StatusChip.Text = "Needs attention"
         $StatusChip.ForeColor = $Warning
+        $StatusChip.BackColor = [System.Drawing.Color]::FromArgb(251, 237, 222)
         $StatusLabel.Text = "Something needs attention."
+        $StatusLabel.ForeColor = $Warning
         $StatusSubtext.Text = "RazorWear stopped before finishing."
     }
     finally {
@@ -782,7 +827,9 @@ function Start-RazorWearOperation {
     $isPreview = $Mode -eq "Preview"
     $StatusChip.Text = if ($isPreview) { "Scanning" } else { "Cleaning" }
     $StatusChip.ForeColor = $Warning
+    $StatusChip.BackColor = [System.Drawing.Color]::FromArgb(251, 237, 222)
     $StatusLabel.Text = if ($isPreview) { "Scanning..." } else { "Cleaning..." }
+    $StatusLabel.ForeColor = $Ink
     $StatusSubtext.Text = if ($isPreview) {
         "Preview mode checks selected cleanup areas without deleting anything."
     }
@@ -872,6 +919,7 @@ $ReportBugMenuItem.Add_Click({
 
 $Form.Add_Shown({
     Update-ResultsLayout
+    Update-InfoLayout
     Show-IdleView
     $IdleTimer.Start()
 })
