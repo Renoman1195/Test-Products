@@ -49,7 +49,14 @@ function Invoke-RazorWear {
     param(
         [string]$Mode,
         [int]$OlderThanDays,
-        [bool]$IncludeRecycleBin
+        [bool]$IncludeRecycleBin,
+        [bool]$IncludeBrowserCache,
+        [bool]$IncludeOldLogs,
+        [bool]$IncludeUpdateLeftovers,
+        [bool]$IncludeAppLeftovers,
+        [bool]$IncludeBrowserData,
+        [bool]$AnalyzeDownloads,
+        [bool]$FindDuplicates
     )
 
     $arguments = @(
@@ -62,6 +69,27 @@ function Invoke-RazorWear {
 
     if ($IncludeRecycleBin) {
         $arguments += "-IncludeRecycleBin"
+    }
+    if ($IncludeBrowserCache) {
+        $arguments += "-IncludeBrowserCache"
+    }
+    if ($IncludeOldLogs) {
+        $arguments += "-IncludeOldLogs"
+    }
+    if ($IncludeUpdateLeftovers) {
+        $arguments += "-IncludeUpdateLeftovers"
+    }
+    if ($IncludeAppLeftovers) {
+        $arguments += "-IncludeAppLeftovers"
+    }
+    if ($IncludeBrowserData) {
+        $arguments += "-IncludeBrowserData"
+    }
+    if ($AnalyzeDownloads) {
+        $arguments += "-AnalyzeDownloads"
+    }
+    if ($FindDuplicates) {
+        $arguments += "-FindDuplicates"
     }
 
     $process = New-Object System.Diagnostics.Process
@@ -87,8 +115,8 @@ function Invoke-RazorWear {
 $Form = New-Object System.Windows.Forms.Form
 $Form.Text = "RazorWear"
 $Form.StartPosition = "CenterScreen"
-$Form.Size = New-Object System.Drawing.Size(940, 660)
-$Form.MinimumSize = New-Object System.Drawing.Size(940, 660)
+$Form.Size = New-Object System.Drawing.Size(980, 760)
+$Form.MinimumSize = New-Object System.Drawing.Size(940, 720)
 $Form.BackColor = $Canvas
 $Form.Font = New-Font 9
 
@@ -193,6 +221,7 @@ $ControlsPanel.Dock = [System.Windows.Forms.DockStyle]::Fill
 $ControlsPanel.BackColor = $Surface
 $ControlsPanel.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
 $ControlsPanel.Padding = New-Object System.Windows.Forms.Padding(18)
+$ControlsPanel.AutoScroll = $true
 $Main.Controls.Add($ControlsPanel, 0, 0)
 
 $OptionsTitle = New-Object System.Windows.Forms.Label
@@ -204,7 +233,7 @@ $OptionsTitle.Location = New-Object System.Drawing.Point(20, 20)
 $ControlsPanel.Controls.Add($OptionsTitle)
 
 $OptionsText = New-Object System.Windows.Forms.Label
-$OptionsText.Text = "RazorWear clears approved temp folders while leaving your personal files alone."
+$OptionsText.Text = "RazorWear clears selected safe areas while leaving your personal files alone."
 $OptionsText.Size = New-Object System.Drawing.Size(250, 54)
 $OptionsText.Font = New-Font 9
 $OptionsText.ForeColor = $Muted
@@ -236,12 +265,37 @@ $DaysLabel.ForeColor = $Muted
 $DaysLabel.Location = New-Object System.Drawing.Point(106, 128)
 $ControlsPanel.Controls.Add($DaysLabel)
 
+$CleanupOptionsLabel = New-Object System.Windows.Forms.Label
+$CleanupOptionsLabel.Text = "Cleanup areas"
+$CleanupOptionsLabel.AutoSize = $true
+$CleanupOptionsLabel.Font = New-Font 9 ([System.Drawing.FontStyle]::Bold)
+$CleanupOptionsLabel.ForeColor = $Ink
+$CleanupOptionsLabel.Location = New-Object System.Drawing.Point(22, 164)
+$ControlsPanel.Controls.Add($CleanupOptionsLabel)
+
+$CleanupOptions = New-Object System.Windows.Forms.CheckedListBox
+$CleanupOptions.CheckOnClick = $true
+$CleanupOptions.Font = New-Font 8
+$CleanupOptions.ForeColor = $Ink
+$CleanupOptions.BackColor = [System.Drawing.Color]::White
+$CleanupOptions.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
+$CleanupOptions.Size = New-Object System.Drawing.Size(250, 112)
+$CleanupOptions.Location = New-Object System.Drawing.Point(24, 186)
+$OptionBrowserCache = $CleanupOptions.Items.Add("Browser cache", $true)
+$OptionOldLogs = $CleanupOptions.Items.Add("Old logs/crash dumps", $true)
+$OptionUpdateLeftovers = $CleanupOptions.Items.Add("Update leftovers", $false)
+$OptionAppLeftovers = $CleanupOptions.Items.Add("App leftovers", $false)
+$OptionBrowserData = $CleanupOptions.Items.Add("Cookies/history", $false)
+$OptionDownloads = $CleanupOptions.Items.Add("Downloads report only", $true)
+$OptionDuplicates = $CleanupOptions.Items.Add("Duplicate report only", $false)
+$ControlsPanel.Controls.Add($CleanupOptions)
+
 $RecycleCheck = New-Object System.Windows.Forms.CheckBox
 $RecycleCheck.Text = "Also empty Recycle Bin"
 $RecycleCheck.AutoSize = $true
 $RecycleCheck.Font = New-Font 9
 $RecycleCheck.ForeColor = $Ink
-$RecycleCheck.Location = New-Object System.Drawing.Point(24, 170)
+$RecycleCheck.Location = New-Object System.Drawing.Point(24, 306)
 $ControlsPanel.Controls.Add($RecycleCheck)
 
 $RecycleNote = New-Object System.Windows.Forms.Label
@@ -249,7 +303,7 @@ $RecycleNote.Text = "Off by default so recoverable files stay recoverable."
 $RecycleNote.Size = New-Object System.Drawing.Size(250, 38)
 $RecycleNote.Font = New-Font 8
 $RecycleNote.ForeColor = $SoftMuted
-$RecycleNote.Location = New-Object System.Drawing.Point(25, 196)
+$RecycleNote.Location = New-Object System.Drawing.Point(25, 332)
 $ControlsPanel.Controls.Add($RecycleNote)
 
 $TrustLine = New-Object System.Windows.Forms.Label
@@ -257,27 +311,27 @@ $TrustLine.Text = "No telemetry. No personal folders. No background cleanup."
 $TrustLine.Size = New-Object System.Drawing.Size(250, 42)
 $TrustLine.Font = New-Font 8 ([System.Drawing.FontStyle]::Bold)
 $TrustLine.ForeColor = $Brand
-$TrustLine.Location = New-Object System.Drawing.Point(24, 238)
+$TrustLine.Location = New-Object System.Drawing.Point(24, 374)
 $ControlsPanel.Controls.Add($TrustLine)
 
 $PreviewButton = New-Object System.Windows.Forms.Button
 $PreviewButton.Text = "Preview Scan"
 $PreviewButton.Size = New-Object System.Drawing.Size(250, 44)
-$PreviewButton.Location = New-Object System.Drawing.Point(24, 286)
+$PreviewButton.Location = New-Object System.Drawing.Point(24, 428)
 Set-ButtonStyle -Button $PreviewButton -BackColor ([System.Drawing.Color]::FromArgb(230, 239, 236)) -ForeColor $Brand
 $ControlsPanel.Controls.Add($PreviewButton)
 
 $CleanButton = New-Object System.Windows.Forms.Button
 $CleanButton.Text = "Clean Safely"
 $CleanButton.Size = New-Object System.Drawing.Size(250, 50)
-$CleanButton.Location = New-Object System.Drawing.Point(24, 338)
+$CleanButton.Location = New-Object System.Drawing.Point(24, 484)
 Set-ButtonStyle -Button $CleanButton -BackColor $Brand -ForeColor ([System.Drawing.Color]::White)
 $ControlsPanel.Controls.Add($CleanButton)
 
 $OpenLogsButton = New-Object System.Windows.Forms.Button
 $OpenLogsButton.Text = "Open Logs"
 $OpenLogsButton.Size = New-Object System.Drawing.Size(250, 38)
-$OpenLogsButton.Location = New-Object System.Drawing.Point(24, 400)
+$OpenLogsButton.Location = New-Object System.Drawing.Point(24, 548)
 Set-ButtonStyle -Button $OpenLogsButton -BackColor ([System.Drawing.Color]::FromArgb(245, 247, 245)) -ForeColor ([System.Drawing.Color]::FromArgb(64, 75, 70))
 $ControlsPanel.Controls.Add($OpenLogsButton)
 
@@ -367,7 +421,7 @@ $IdlePanel.Controls.Add($IdleTitle)
 $IdleTitle.Visible = $false
 
 $IdleSubtext = New-Object System.Windows.Forms.Label
-$IdleSubtext.Text = "Preview first. Only approved temp folders are checked. No information is collected."
+$IdleSubtext.Text = "Preview first. Only approved cleanup areas are checked. No information is collected."
 $IdleSubtext.AutoSize = $false
 $IdleSubtext.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
 $IdleSubtext.Font = New-Font 9
@@ -417,7 +471,7 @@ $IdlePanel.Add_Paint({
     $titleSize = $graphics.MeasureString($title, $titleFont)
     $graphics.DrawString($title, $titleFont, $textBrush, $centerX - ($titleSize.Width / 2), $titleY)
 
-    $body = "Preview first. Only approved temp folders are checked.`nNo information is collected."
+    $body = "Preview first. Only approved cleanup areas are checked.`nNo information is collected."
     $bodyRect = New-Object System.Drawing.RectangleF(64, $bodyY, ($width - 128), 50)
     $bodyFormat = New-Object System.Drawing.StringFormat
     $bodyFormat.Alignment = [System.Drawing.StringAlignment]::Center
@@ -583,7 +637,7 @@ No tracking
 RazorWear does not include ads, telemetry, third-party trackers, or a background service.
 
 Safe cleanup
-Regular cleanup only targets approved temporary folders. Desktop, Documents, Downloads, Pictures, Music, Videos, OneDrive, saved passwords, and personal files stay untouched.
+Cleanup targets selected safe areas such as temp files, browser cache, old logs, update leftovers, and old installer leftovers. Downloads and duplicates are report-only.
 
 Simple and reliable
 You can preview before cleaning, choose whether to include the Recycle Bin, and review local logs on your own computer.
@@ -636,6 +690,7 @@ function Set-BusyState {
     $OpenLogsButton.Enabled = -not $Busy
     $AgeInput.Enabled = -not $Busy
     $RecycleCheck.Enabled = -not $Busy
+    $CleanupOptions.Enabled = -not $Busy
     $ActivityText.Text = $ActivityMessage
     $ActivityPanel.Visible = $Busy
     if ($Busy) {
@@ -654,7 +709,17 @@ $Worker.Add_DoWork({
     param($sender, $eventArgs)
 
     $job = $eventArgs.Argument
-    $output = Invoke-RazorWear -Mode $job.Mode -OlderThanDays $job.OlderThanDays -IncludeRecycleBin $job.IncludeRecycleBin
+    $output = Invoke-RazorWear `
+        -Mode $job.Mode `
+        -OlderThanDays $job.OlderThanDays `
+        -IncludeRecycleBin $job.IncludeRecycleBin `
+        -IncludeBrowserCache $job.IncludeBrowserCache `
+        -IncludeOldLogs $job.IncludeOldLogs `
+        -IncludeUpdateLeftovers $job.IncludeUpdateLeftovers `
+        -IncludeAppLeftovers $job.IncludeAppLeftovers `
+        -IncludeBrowserData $job.IncludeBrowserData `
+        -AnalyzeDownloads $job.AnalyzeDownloads `
+        -FindDuplicates $job.FindDuplicates
     $eventArgs.Result = [pscustomobject]@{
         Mode = $job.Mode
         Output = $output
@@ -706,13 +771,13 @@ function Start-RazorWearOperation {
     $StatusChip.ForeColor = $Warning
     $StatusLabel.Text = if ($isPreview) { "Scanning..." } else { "Cleaning..." }
     $StatusSubtext.Text = if ($isPreview) {
-        "Preview mode checks safe temp folders without deleting anything."
+        "Preview mode checks selected cleanup areas without deleting anything."
     }
     else {
-        "RazorWear is removing only approved temporary files."
+        "RazorWear is cleaning only the selected approved areas."
     }
     Show-OutputView
-    Set-OutputText $(if ($isPreview) { "Scanning safe cleanup locations..." } else { "Cleaning safe temp locations..." })
+    Set-OutputText $(if ($isPreview) { "Scanning selected cleanup locations..." } else { "Cleaning selected safe locations..." })
 
     Set-BusyState $true $(if ($isPreview) { "Scanning safely..." } else { "Cleaning safely..." })
 
@@ -720,6 +785,13 @@ function Start-RazorWearOperation {
         Mode = $Mode
         OlderThanDays = [int]$AgeInput.Value
         IncludeRecycleBin = $RecycleCheck.Checked
+        IncludeBrowserCache = $CleanupOptions.GetItemChecked($OptionBrowserCache)
+        IncludeOldLogs = $CleanupOptions.GetItemChecked($OptionOldLogs)
+        IncludeUpdateLeftovers = $CleanupOptions.GetItemChecked($OptionUpdateLeftovers)
+        IncludeAppLeftovers = $CleanupOptions.GetItemChecked($OptionAppLeftovers)
+        IncludeBrowserData = $CleanupOptions.GetItemChecked($OptionBrowserData)
+        AnalyzeDownloads = $CleanupOptions.GetItemChecked($OptionDownloads)
+        FindDuplicates = $CleanupOptions.GetItemChecked($OptionDuplicates)
     })
 }
 
@@ -728,9 +800,13 @@ $PreviewButton.Add_Click({
 })
 
 $CleanButton.Add_Click({
-    $message = "RazorWear will remove old temporary files from approved temp folders only."
+    $message = "RazorWear will remove selected cleanable files older than $($AgeInput.Value) day(s)."
+    $message += "`r`n`r`nDownloads and duplicate reports are never auto-deleted."
     if ($RecycleCheck.Checked) {
         $message += "`r`n`r`nYou also selected Recycle Bin cleanup."
+    }
+    if ($CleanupOptions.GetItemChecked($OptionBrowserData)) {
+        $message += "`r`n`r`nYou also selected browser cookies/history cleanup. Close browsers first for best results."
     }
 
     $confirm = [System.Windows.Forms.MessageBox]::Show(

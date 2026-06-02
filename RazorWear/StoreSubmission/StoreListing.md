@@ -18,16 +18,18 @@ A lightweight, private PC cleanup tool for safe temporary-file cleanup.
 
 ## Description
 
-RazorWear™ helps you clear old temporary files from your Windows PC without touching your important personal folders.
+RazorWear™ helps you clear selected safe clutter from your Windows PC without touching your important personal folders.
 
 It is intentionally simple: no accounts, no tracking, no ads, no background service, and no data collection. Run a preview first, review what can be cleaned, then choose whether to clean.
 
-RazorWear™ focuses on low-risk cleanup areas such as Windows temp folders. It does not clean Desktop, Documents, Downloads, Pictures, Music, Videos, OneDrive, saved passwords, or personal files.
+RazorWear™ focuses on low-risk cleanup areas such as temp files, browser cache, old logs, update leftovers, and old installer leftovers. Downloads clutter and duplicate files are report-only, and it does not auto-delete Desktop, Documents, Downloads, Pictures, Music, Videos, OneDrive, saved passwords, or personal files.
 
 ## Store Features
 
 - Preview cleanup before deleting anything
 - Clean old temporary files from approved temp folders
+- Optional browser cache, old log, update leftover, and app leftover cleanup
+- Downloads clutter and duplicate file reports without auto-delete
 - Recycle Bin cleanup is optional and off by default
 - Info tab explains the no-tracking, no-data-collection safety promise
 - Polished desktop UI with clear status feedback
