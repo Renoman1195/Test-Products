@@ -2,9 +2,15 @@
 
 The current RazorWear desktop GUI is built with PowerShell and Windows Forms. That is useful for rapid development, but the Microsoft Store package should use a normal executable entry point.
 
-## Recommended Final Launcher
+## Final Launcher
 
-Create `RazorWear.exe` that:
+`RazorWear.exe` is now built from `RazorWear\src\RazorWear.cs` with:
+
+```powershell
+.\scripts\build-razorwear.ps1
+```
+
+It:
 
 - Opens the same friendly GUI.
 - Uses the same safe cleanup rules.
@@ -12,13 +18,16 @@ Create `RazorWear.exe` that:
 - Does not start a background service.
 - Does not require administrator access for regular cleanup.
 - Stores logs locally.
+- Supports command-line preview mode for safe automated verification.
 
-## Good Implementation Options
+## Store Entry Point
 
-- .NET WPF app
-- .NET WinForms app
-- WinUI 3 desktop app
+The MSIX manifest should launch `RazorWear.exe` as the full-trust desktop
+application entry point.
 
-## Current Blocker On This Machine
+## Current Packaging Blockers
 
-This machine has .NET runtimes installed, but no .NET SDK. A final native executable build needs the .NET SDK or Visual Studio.
+- Partner Center package identity values are still placeholders.
+- The development MSIX is unsigned.
+- Final Store screenshots, support contact, and public privacy policy URL are
+  still required before submission.

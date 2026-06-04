@@ -14,10 +14,13 @@ Prepared:
 - MSIX app manifest template
 - Repeatable MSIX build script
 - Asset generation script
+- Native `RazorWear.exe` launcher source and build script
+- Development MSIX packaging script
 - Packaging checklist
 - Submission status checklist
 - Desktop Store screenshot
 - Native `RazorWear.exe` launcher
+- Submission readiness tracker
 
 Still needed before final submission:
 
@@ -27,6 +30,10 @@ Still needed before final submission:
 - Partner Center package identity values confirmed against `Package.appxmanifest.template.xml`
 - Public privacy policy URL confirmed in Partner Center
 - Elevated Windows App Certification Kit pass on the final signed package
+- Final signed MSIX package generated with Partner Center identity values
+- Support contact
+
+Track the full go/no-go list in `SubmissionReadiness.md`.
 
 ## Recommended Store Name
 
@@ -49,6 +56,21 @@ The final package should launch `RazorWear.exe`. The native launcher starts the 
 ## Trademark
 
 RazorWear™ and TraceWear™ are trademarks of Jacob Brown.
+
+## Build Commands
+
+From the repo root:
+
+```powershell
+.\scripts\check.ps1
+.\scripts\build-razorwear.ps1
+.\scripts\package-msix.ps1
+```
+
+The default MSIX package uses development identity values and is unsigned. For
+Store submission, replace the package name, publisher, and display name with
+the exact values from Partner Center, then sign/package using the approved
+Store workflow.
 
 ## Important
 

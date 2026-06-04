@@ -10,10 +10,12 @@ $ErrorActionPreference = "Stop"
 
 $StoreRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $AppRoot = Split-Path -Parent $StoreRoot
+$RepoRoot = Split-Path -Parent $AppRoot
 $BuildRoot = Join-Path $StoreRoot "PackageBuild"
 $LayoutRoot = Join-Path $BuildRoot "RazorWear"
 $PackageRoot = Join-Path $StoreRoot "Packages"
 $PackagePath = Join-Path $PackageRoot "RazorWear-0.5.2.0.msix"
+$DistExe = Join-Path $AppRoot "dist\RazorWear.exe"
 
 if (Test-Path -LiteralPath $BuildRoot) {
     Remove-Item -LiteralPath $BuildRoot -Recurse -Force
@@ -22,8 +24,11 @@ if (Test-Path -LiteralPath $BuildRoot) {
 New-Item -ItemType Directory -Path $LayoutRoot -Force | Out-Null
 New-Item -ItemType Directory -Path $PackageRoot -Force | Out-Null
 
+if (-not (Test-Path -LiteralPath $DistExe)) {
+    powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $RepoRoot "scripts\build-razorwear.ps1")
+}
+
 $requiredFiles = @(
-    "RazorWear.exe",
     "RazorWear-GUI.ps1",
     "RazorWear.ps1",
     "VERSION.txt",
@@ -38,6 +43,11 @@ foreach ($file in $requiredFiles) {
     }
     Copy-Item -LiteralPath $source -Destination (Join-Path $LayoutRoot $file) -Force
 }
+
+if (-not (Test-Path -LiteralPath $DistExe)) {
+    throw "Missing built launcher: $DistExe"
+}
+Copy-Item -LiteralPath $DistExe -Destination (Join-Path $LayoutRoot "RazorWear.exe") -Force
 
 Copy-Item -LiteralPath (Join-Path $StoreRoot "Package.appxmanifest.template.xml") -Destination (Join-Path $LayoutRoot "AppxManifest.xml") -Force
 Copy-Item -LiteralPath (Join-Path $StoreRoot "Assets") -Destination (Join-Path $LayoutRoot "Assets") -Recurse -Force

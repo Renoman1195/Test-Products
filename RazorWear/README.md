@@ -51,6 +51,30 @@ powershell -ExecutionPolicy Bypass -File .\RazorWear.ps1 -Clean -IncludeRecycleB
 powershell -ExecutionPolicy Bypass -File .\RazorWear.ps1 -Preview -IncludeBrowserCache -IncludeOldLogs -AnalyzeDownloads
 ```
 
+## Verification
+
+From the repo root, run:
+
+```powershell
+.\scripts\check.ps1
+```
+
+The verification script is safe: it parses the PowerShell files, checks the
+launchers and Store assets, runs preview mode only, builds the native
+`RazorWear.exe` launcher, and tests that launcher in preview mode.
+
+Build the native launcher:
+
+```powershell
+.\scripts\build-razorwear.ps1
+```
+
+Build a development MSIX package:
+
+```powershell
+.\scripts\package-msix.ps1
+```
+
 ## Privacy
 
 RazorWear does not collect, upload, sell, or transmit personal information. Cleanup and logs stay local. Update checks connect only when you choose them and use Microsoft update tools.

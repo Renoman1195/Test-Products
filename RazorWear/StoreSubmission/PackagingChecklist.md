@@ -13,8 +13,10 @@
 ## Packaging
 
 - Install Visual Studio with Windows app packaging tools, or install MSIX Packaging Tool.
+- Run `.\scripts\check.ps1` from the repo root.
 - Build or verify the final `RazorWear.exe` launcher.
 - Package RazorWear as a desktop MSIX app with `StoreSubmission/Build-StorePackage.ps1`.
+- For development packaging from the repo root, use `.\scripts\package-msix.ps1`.
 - Sign the package with a certificate whose subject matches the manifest publisher.
 - Use the generated assets from `Assets`.
 - Include the Store screenshot from `Screenshots`.
@@ -22,9 +24,16 @@
 - Verify preview mode runs.
 - Verify clean mode asks for confirmation.
 - Verify regular cleanup skips Recycle Bin.
+- Verify logs are written under Local AppData, not the install folder.
 - Run Windows App Certification Kit on the final signed package from an elevated shell.
 
 ## Local Commands
+
+Run full repository verification:
+
+```powershell
+.\scripts\check.ps1
+```
 
 Build unsigned package:
 
